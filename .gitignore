@@ -1,0 +1,18 @@
+# data and secrets
+data/
+.env
+config/oanda_config.json
+
+# python
+__pycache__/
+*.pyc
+
+# notebooks
+.ipynb_checkpoints/
+
+# virtual envs
+.venv/
+venv/
+
+# os
+.DS_Store

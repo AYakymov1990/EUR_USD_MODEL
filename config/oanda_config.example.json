@@ -1,0 +1,7 @@
+{
+  "api_key": "c058134431d7281ac67a23cc53439174-486228181077c7a3041ec41d27a1aae4",
+  "account_id": "101-004-37622601-001",
+  "environment": "practice",
+  "base_url_practice": "https://api-fxpractice.oanda.com",
+  "base_url_live": "https://api-fxtrade.oanda.com"
+}
