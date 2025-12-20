@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -54,6 +56,15 @@ class OandaClient:
             "Content-Type": "application/json",
         }
 
+    @staticmethod
+    def _to_oanda_time(dt: datetime) -> str:
+        """Convert a datetime to OANDA ISO8601 format with Z (UTC)."""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     def get_account_details(self) -> dict[str, Any]:
         """Fetch account details using GET /v3/accounts/{accountID}."""
         url = f"{self.config.base_url}/v3/accounts/{self.config.account_id}"
@@ -96,12 +107,14 @@ class OandaClient:
             "price": price,
             "smooth": "true" if smooth else "false",
         }
+        if from_time is not None:
+            params["from"] = from_time
+        if to_time is not None:
+            params["to"] = to_time
+        if from_time is not None and to_time is not None:
+            params["includeFirst"] = "true" if include_first else "false"
         if count is not None:
             params["count"] = count
-        else:
-            params["from"] = from_time
-            params["to"] = to_time
-            params["includeFirst"] = "true" if include_first else "false"
 
         url = f"{self.config.base_url}/v3/instruments/{instrument}/candles"
         try:
@@ -137,3 +150,71 @@ class OandaClient:
 
         df = df.sort_values("time").reset_index(drop=True)
         return df
+
+    def get_candles_range(
+        self,
+        instrument: str,
+        granularity: str,
+        start: datetime,
+        end: datetime,
+        price: str = "M",
+        max_per_request: int = 5000,
+        sleep_sec: float = 0.2,
+    ) -> pd.DataFrame:
+        """Fetch candles in [start, end) using multiple requests (pagination by time)."""
+        start_utc = (
+            start.astimezone(timezone.utc) if start.tzinfo else start.replace(tzinfo=timezone.utc)
+        )
+        end_utc = (
+            end.astimezone(timezone.utc) if end.tzinfo else end.replace(tzinfo=timezone.utc)
+        )
+
+        current_start = start_utc
+        chunks: list[pd.DataFrame] = []
+
+        while current_start < end_utc:
+            from_str = self._to_oanda_time(current_start)
+            logger.info(
+                "Fetching %s %s from %s (max %s)",
+                instrument,
+                granularity,
+                from_str,
+                max_per_request,
+            )
+            df_chunk = self.get_candles(
+                instrument=instrument,
+                granularity=granularity,
+                count=max_per_request,
+                from_time=from_str,
+                price=price,
+            )
+
+            if df_chunk.empty:
+                logger.warning("Empty candle batch returned for %s %s.", instrument, granularity)
+                break
+
+            last_time = df_chunk["time"].max()
+            if pd.isna(last_time):
+                logger.warning("No valid time in candle batch for %s %s.", instrument, granularity)
+                break
+
+            last_dt = last_time.to_pydatetime()
+            if last_dt <= current_start:
+                logger.warning(
+                    "Candle time did not advance (last=%s, current=%s). Stopping.",
+                    last_dt,
+                    current_start,
+                )
+                break
+
+            chunks.append(df_chunk)
+            current_start = last_dt + timedelta(seconds=1)
+            time.sleep(sleep_sec)
+
+        if not chunks:
+            return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
+
+        df_all = pd.concat(chunks, ignore_index=True)
+        df_all = df_all.drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True)
+        df_all = df_all[(df_all["time"] >= start_utc) & (df_all["time"] < end_utc)].reset_index(drop=True)
+        return df_all
