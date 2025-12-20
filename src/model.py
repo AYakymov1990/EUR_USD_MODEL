@@ -58,6 +58,9 @@ class TrainConfig:
     batch_size: int = 256
     seed: int = 42
     device: str = "cpu"
+    weight_decay: float = 1e-4
+    patience: int = 15
+    min_delta: float = 0.0
 
 
 def _set_seeds(seed: int) -> None:
@@ -67,6 +70,17 @@ def _set_seeds(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+def mse_baseline_zero(y: np.ndarray) -> float:
+    """Baseline MSE for always predicting zero."""
+    return float(np.mean(y**2))
+
+
+def mse_baseline_mean(y_train: np.ndarray, y_test: np.ndarray) -> float:
+    """Baseline MSE for predicting train mean."""
+    mean_val = float(np.mean(y_train))
+    return float(np.mean((y_test - mean_val) ** 2))
+
+
 def train_linear_model(
     x_train: np.ndarray,
     y_train: np.ndarray,
@@ -74,7 +88,7 @@ def train_linear_model(
     y_val: np.ndarray,
     config: TrainConfig | None = None,
 ) -> Tuple[LinearRegressionModel, Dict[str, list[float]]]:
-    """Train a linear regression model with MSE loss and best-val checkpoint."""
+    """Train a linear regression model with MSE loss and early stopping."""
     if config is None:
         config = TrainConfig()
 
@@ -92,12 +106,15 @@ def train_linear_model(
     )
 
     model = LinearRegressionModel(n_features=x_train.shape[1]).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config.lr, weight_decay=config.weight_decay
+    )
     criterion = nn.MSELoss()
 
     history: Dict[str, list[float]] = {"train_loss": [], "val_loss": []}
     best_val = float("inf")
     best_state: dict[str, torch.Tensor] | None = None
+    patience_left = config.patience
 
     for _ in range(config.epochs):
         model.train()
@@ -121,9 +138,14 @@ def train_linear_model(
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
 
-        if val_loss < best_val:
+        if val_loss + config.min_delta < best_val:
             best_val = val_loss
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            patience_left = config.patience
+        else:
+            patience_left -= 1
+            if patience_left <= 0:
+                break
 
     if best_state is not None:
         model.load_state_dict(best_state)

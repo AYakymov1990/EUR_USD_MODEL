@@ -1,4 +1,4 @@
-"""Simple backtesting utilities for model predictions."""
+"""Backtesting utilities for horizon-aware model predictions."""
 
 from __future__ import annotations
 
@@ -28,41 +28,33 @@ def _max_drawdown(equity: pd.Series) -> float:
     return float(drawdown.min())
 
 
-def _extract_trades(df: pd.DataFrame, position_col: str) -> pd.DataFrame:
+def _extract_trades_horizon(
+    df: pd.DataFrame,
+    position_col: str,
+    horizon: int,
+) -> pd.DataFrame:
     trades: list[dict[str, Any]] = []
     position = df[position_col].fillna(0)
-    changes = position.diff().fillna(position)
-    entry_idx = position[(changes != 0) & (position != 0)].index
-    exit_idx = position[(changes != 0) & (position == 0)].index
 
-    open_trade = None
-    for idx in position.index:
-        if idx in entry_idx:
-            if open_trade is not None:
-                open_trade["exit_time"] = df.loc[idx, "time"]
-                open_trade["exit_price"] = df.loc[idx, "close"]
-                open_trade["pnl"] = (
-                    (open_trade["exit_price"] - open_trade["entry_price"])
-                    / open_trade["entry_price"]
-                ) * open_trade["direction"]
-                trades.append(open_trade)
-            open_trade = {
+    entry_idx = position[(position != 0) & (position.shift(1).fillna(0) == 0)].index
+    for idx in entry_idx:
+        exit_idx = idx + horizon
+        if exit_idx >= len(df):
+            continue
+        direction = int(position.loc[idx])
+        entry_price = df.loc[idx, "close"]
+        exit_price = df.loc[exit_idx, "close"]
+        pnl = (exit_price - entry_price) / entry_price * direction
+        trades.append(
+            {
                 "entry_time": df.loc[idx, "time"],
-                "entry_price": df.loc[idx, "close"],
-                "direction": int(position.loc[idx]),
-                "exit_time": None,
-                "exit_price": None,
-                "pnl": None,
+                "exit_time": df.loc[exit_idx, "time"],
+                "direction": direction,
+                "entry_price": entry_price,
+                "exit_price": exit_price,
+                "pnl": pnl,
             }
-        if idx in exit_idx and open_trade is not None:
-            open_trade["exit_time"] = df.loc[idx, "time"]
-            open_trade["exit_price"] = df.loc[idx, "close"]
-            open_trade["pnl"] = (
-                (open_trade["exit_price"] - open_trade["entry_price"])
-                / open_trade["entry_price"]
-            ) * open_trade["direction"]
-            trades.append(open_trade)
-            open_trade = None
+        )
 
     return pd.DataFrame(trades)
 
@@ -73,19 +65,47 @@ def backtest_long_short(
     price_col: str = "close",
     threshold: float = 0.0,
     cost_bps: float = 0.5,
+    horizon: int = 3,
+    enforce_hold: bool = True,
 ) -> BacktestResult:
-    """Run a simple long/short backtest with next-bar execution and costs."""
+    """Run a horizon-aware long/short backtest with next-bar execution."""
     data = df.sort_values("time").reset_index(drop=True).copy()
-    data["actual_return"] = data[price_col].pct_change().fillna(0.0)
 
-    signal = np.where(data[pred_col] > threshold, 1, 0)
-    signal = np.where(data[pred_col] < -threshold, -1, signal)
-    data["signal"] = signal
-    data["position"] = data["signal"].shift(1).fillna(0)
+    data["fwd_ret_h"] = data[price_col].shift(-horizon) / data[price_col] - 1.0
+    data = data.iloc[:-horizon].reset_index(drop=True)
 
-    turnover = data["position"].diff().abs().fillna(data["position"].abs())
-    cost = turnover * (cost_bps / 10000.0)
-    data["strategy_return"] = data["position"] * data["actual_return"] - cost
+    desired = np.where(data[pred_col] > threshold, 1, 0)
+    desired = np.where(data[pred_col] < -threshold, -1, desired)
+    data["desired_signal"] = desired
+
+    position = np.zeros(len(data))
+    hold_until = -1
+
+    for t in range(len(data)):
+        if t <= hold_until and enforce_hold:
+            position[t] = position[t - 1] if t > 0 else 0
+            continue
+
+        if t == 0:
+            position[t] = 0
+            continue
+
+        position[t] = data["desired_signal"].iloc[t - 1]
+        if enforce_hold and position[t] != 0:
+            hold_until = t + horizon - 1
+
+    data["position"] = position
+
+    cost_per_trade = cost_bps / 10000.0
+    pos_prev = data["position"].shift(1).fillna(0)
+    change = data["position"] - pos_prev
+    trade_cost = np.where(change == 0, 0.0, 0.0)
+    trade_cost += np.where((pos_prev == 0) & (data["position"] != 0), cost_per_trade, 0.0)
+    trade_cost += np.where((pos_prev != 0) & (data["position"] == 0), cost_per_trade, 0.0)
+    trade_cost += np.where((pos_prev == 1) & (data["position"] == -1), 2 * cost_per_trade, 0.0)
+    trade_cost += np.where((pos_prev == -1) & (data["position"] == 1), 2 * cost_per_trade, 0.0)
+
+    data["strategy_return"] = data["position"] * data["fwd_ret_h"] - trade_cost
     data["equity_curve"] = (1 + data["strategy_return"]).cumprod()
 
     total_return = data["equity_curve"].iloc[-1] - 1.0
@@ -101,7 +121,7 @@ def backtest_long_short(
         (data.loc[active, "strategy_return"] > 0).mean() if active.any() else 0.0
     )
 
-    trades = _extract_trades(data, "position")
+    trades = _extract_trades_horizon(data, "position", horizon)
 
     metrics = {
         "total_return": float(total_return),
