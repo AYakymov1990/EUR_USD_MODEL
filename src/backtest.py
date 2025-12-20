@@ -1,4 +1,4 @@
-"""Backtesting utilities for horizon-aware model predictions."""
+"""Backtesting utilities for model predictions."""
 
 from __future__ import annotations
 
@@ -16,10 +16,15 @@ BARS_PER_YEAR = 252 * 24 * 4
 class BacktestResult:
     """Container for backtest outputs."""
 
-    equity_curve: pd.Series
-    returns: pd.Series
-    trades: pd.DataFrame
+    equity: pd.Series
     metrics: Dict[str, float]
+    trades: pd.DataFrame
+    debug: Dict[str, Any]
+
+    @property
+    def equity_curve(self) -> pd.Series:
+        """Backwards-compatible alias for equity."""
+        return self.equity
 
 
 def _max_drawdown(equity: pd.Series) -> float:
@@ -28,33 +33,45 @@ def _max_drawdown(equity: pd.Series) -> float:
     return float(drawdown.min())
 
 
-def _extract_trades_horizon(
-    df: pd.DataFrame,
-    position_col: str,
-    horizon: int,
-) -> pd.DataFrame:
+def _calc_costs(position: pd.Series, cost_bps: float) -> pd.Series:
+    cost_per_trade = cost_bps / 10000.0
+    pos_prev = position.shift(1).fillna(0)
+    cost = pd.Series(0.0, index=position.index)
+
+    cost += ((pos_prev == 0) & (position != 0)) * cost_per_trade
+    cost += ((pos_prev != 0) & (position == 0)) * cost_per_trade
+    cost += ((pos_prev == 1) & (position == -1)) * (2 * cost_per_trade)
+    cost += ((pos_prev == -1) & (position == 1)) * (2 * cost_per_trade)
+    return cost
+
+
+def _extract_trades(df: pd.DataFrame, position_col: str) -> pd.DataFrame:
     trades: list[dict[str, Any]] = []
     position = df[position_col].fillna(0)
+    changes = position.diff().fillna(position)
 
-    entry_idx = position[(position != 0) & (position.shift(1).fillna(0) == 0)].index
-    for idx in entry_idx:
-        exit_idx = idx + horizon
-        if exit_idx >= len(df):
+    open_trade = None
+    for idx in position.index:
+        if changes.loc[idx] == 0:
             continue
-        direction = int(position.loc[idx])
-        entry_price = df.loc[idx, "close"]
-        exit_price = df.loc[exit_idx, "close"]
-        pnl = (exit_price - entry_price) / entry_price * direction
-        trades.append(
-            {
+        if open_trade is not None:
+            open_trade["exit_time"] = df.loc[idx, "time"]
+            open_trade["exit_price"] = df.loc[idx, "close"]
+            open_trade["pnl"] = (
+                (open_trade["exit_price"] - open_trade["entry_price"])
+                / open_trade["entry_price"]
+            ) * open_trade["direction"]
+            trades.append(open_trade)
+            open_trade = None
+        if position.loc[idx] != 0:
+            open_trade = {
                 "entry_time": df.loc[idx, "time"],
-                "exit_time": df.loc[exit_idx, "time"],
-                "direction": direction,
-                "entry_price": entry_price,
-                "exit_price": exit_price,
-                "pnl": pnl,
+                "entry_price": df.loc[idx, "close"],
+                "direction": int(position.loc[idx]),
+                "exit_time": None,
+                "exit_price": None,
+                "pnl": None,
             }
-        )
 
     return pd.DataFrame(trades)
 
@@ -65,63 +82,59 @@ def backtest_long_short(
     price_col: str = "close",
     threshold: float = 0.0,
     cost_bps: float = 0.5,
-    horizon: int = 3,
-    enforce_hold: bool = True,
 ) -> BacktestResult:
-    """Run a horizon-aware long/short backtest with next-bar execution."""
+    """Bar-by-bar backtest with next-bar execution and 1-bar returns."""
     data = df.sort_values("time").reset_index(drop=True).copy()
-
-    data["fwd_ret_h"] = data[price_col].shift(-horizon) / data[price_col] - 1.0
-    data = data.iloc[:-horizon].reset_index(drop=True)
+    data["ret_1"] = data[price_col].pct_change().fillna(0.0)
 
     desired = np.where(data[pred_col] > threshold, 1, 0)
     desired = np.where(data[pred_col] < -threshold, -1, desired)
     data["desired_signal"] = desired
+    data["position"] = pd.Series(desired).shift(1).fillna(0).astype(int)
 
-    position = np.zeros(len(data))
-    hold_until = -1
+    cost = _calc_costs(data["position"], cost_bps)
+    data["strategy_return"] = data["position"] * data["ret_1"] - cost
+    data["equity"] = (1 + data["strategy_return"]).cumprod()
 
-    for t in range(len(data)):
-        if t <= hold_until and enforce_hold:
-            position[t] = position[t - 1] if t > 0 else 0
-            continue
-
-        if t == 0:
-            position[t] = 0
-            continue
-
-        position[t] = data["desired_signal"].iloc[t - 1]
-        if enforce_hold and position[t] != 0:
-            hold_until = t + horizon - 1
-
-    data["position"] = position
-
-    cost_per_trade = cost_bps / 10000.0
-    pos_prev = data["position"].shift(1).fillna(0)
-    change = data["position"] - pos_prev
-    trade_cost = np.where(change == 0, 0.0, 0.0)
-    trade_cost += np.where((pos_prev == 0) & (data["position"] != 0), cost_per_trade, 0.0)
-    trade_cost += np.where((pos_prev != 0) & (data["position"] == 0), cost_per_trade, 0.0)
-    trade_cost += np.where((pos_prev == 1) & (data["position"] == -1), 2 * cost_per_trade, 0.0)
-    trade_cost += np.where((pos_prev == -1) & (data["position"] == 1), 2 * cost_per_trade, 0.0)
-
-    data["strategy_return"] = data["position"] * data["fwd_ret_h"] - trade_cost
-    data["equity_curve"] = (1 + data["strategy_return"]).cumprod()
-
-    total_return = data["equity_curve"].iloc[-1] - 1.0
-    annualized_return = (1 + total_return) ** (BARS_PER_YEAR / len(data)) - 1.0
-    annualized_vol = data["strategy_return"].std() * np.sqrt(BARS_PER_YEAR)
-    sharpe = (
-        float(annualized_return / annualized_vol) if annualized_vol and annualized_vol > 0 else 0.0
+    total_return = data["equity"].iloc[-1] - 1.0 if len(data) else 0.0
+    annualized_return = (
+        (1 + total_return) ** (BARS_PER_YEAR / len(data)) - 1.0 if len(data) else 0.0
     )
-    max_dd = _max_drawdown(data["equity_curve"])
+    annualized_vol = data["strategy_return"].std() * np.sqrt(BARS_PER_YEAR) if len(data) else 0.0
+    sharpe = float(annualized_return / annualized_vol) if annualized_vol > 0 else 0.0
+    max_dd = _max_drawdown(data["equity"]) if len(data) else 0.0
 
     active = data["position"] != 0
     hit_rate = (
         (data.loc[active, "strategy_return"] > 0).mean() if active.any() else 0.0
     )
 
-    trades = _extract_trades_horizon(data, "position", horizon)
+    trades = _extract_trades(data, "position")
+
+    pos_counts = data["position"].value_counts().to_dict()
+    desired_counts = pd.Series(data["desired_signal"]).value_counts().to_dict()
+    pos_change_count = int((data["position"].diff().fillna(0) != 0).sum())
+
+    n_bars = len(data)
+    exposure_long = float((data["position"] == 1).mean()) if n_bars else 0.0
+    exposure_short = float((data["position"] == -1).mean()) if n_bars else 0.0
+    exposure_flat = float((data["position"] == 0).mean()) if n_bars else 0.0
+
+    debug = {
+        "n_bars": n_bars,
+        "threshold": threshold,
+        "cost_bps": cost_bps,
+        "pos_unique_values": sorted(data["position"].unique().tolist()),
+        "pos_change_count": pos_change_count,
+        "exposure_long_pct": exposure_long,
+        "exposure_short_pct": exposure_short,
+        "exposure_flat_pct": exposure_flat,
+        "pred_mean": float(data[pred_col].mean()),
+        "pred_std": float(data[pred_col].std()),
+        "pred_abs_p95": float(data[pred_col].abs().quantile(0.95)),
+        "desired_signal_counts": {str(k): int(v) for k, v in desired_counts.items()},
+        "executed_pos_counts": {str(k): int(v) for k, v in pos_counts.items()},
+    }
 
     metrics = {
         "total_return": float(total_return),
@@ -134,8 +147,142 @@ def backtest_long_short(
     }
 
     return BacktestResult(
-        equity_curve=data["equity_curve"],
-        returns=data["strategy_return"],
-        trades=trades,
+        equity=data["equity"],
         metrics=metrics,
+        trades=trades,
+        debug=debug,
+    )
+
+
+def backtest_long_short_horizon(
+    df: pd.DataFrame,
+    pred_col: str = "pred",
+    price_col: str = "close",
+    threshold: float = 0.0,
+    cost_bps: float = 0.5,
+    hold_bars: int = 3,
+    regime: str | None = None,
+    adx_col: str = "adx_14",
+    adx_min: float = 25.0,
+    h1_trend_col: str = "h1_trend_flag",
+) -> BacktestResult:
+    """Horizon-aligned backtest for y = close[t+3] / close[t] - 1."""
+    data = df.sort_values("time").reset_index(drop=True).copy()
+    n = len(data)
+    cost_per_trade = cost_bps / 10000.0
+
+    trades: list[dict[str, Any]] = []
+    equity = pd.Series(1.0, index=data.index, dtype=float)
+    last_equity = 1.0
+
+    abs_pred = data[pred_col].abs()
+    pred_mean = float(data[pred_col].mean())
+    pred_std = float(data[pred_col].std())
+    pred_abs_p90 = float(abs_pred.quantile(0.90))
+    pred_abs_p95 = float(abs_pred.quantile(0.95))
+
+    signal_counts = {"long": 0, "short": 0, "none": 0}
+
+    i = 0
+    while i + 1 + hold_bars < n:
+        pred = data[pred_col].iloc[i]
+        direction = 0
+        if pred > threshold:
+            direction = 1
+        elif pred < -threshold:
+            direction = -1
+
+        if direction == 0:
+            signal_counts["none"] += 1
+            equity.iloc[i] = last_equity
+            i += 1
+            continue
+
+        if regime in {"adx", "adx_and_h1"}:
+            if data[adx_col].iloc[i] < adx_min:
+                signal_counts["none"] += 1
+                equity.iloc[i] = last_equity
+                i += 1
+                continue
+        if regime in {"h1_align", "adx_and_h1"}:
+            h1_flag = data[h1_trend_col].iloc[i]
+            if (direction == 1 and h1_flag != 1) or (direction == -1 and h1_flag != 0):
+                signal_counts["none"] += 1
+                equity.iloc[i] = last_equity
+                i += 1
+                continue
+
+        if direction == 1:
+            signal_counts["long"] += 1
+        else:
+            signal_counts["short"] += 1
+
+        entry_idx = i + 1
+        exit_idx = i + 1 + hold_bars
+        entry_price = data[price_col].iloc[entry_idx]
+        exit_price = data[price_col].iloc[exit_idx]
+
+        trade_ret = (exit_price - entry_price) / entry_price * direction
+        trade_ret -= 2 * cost_per_trade
+
+        last_equity *= 1 + trade_ret
+        equity.iloc[exit_idx] = last_equity
+
+        trades.append(
+            {
+                "entry_time": data["time"].iloc[entry_idx],
+                "exit_time": data["time"].iloc[exit_idx],
+                "direction": direction,
+                "entry_price": entry_price,
+                "exit_price": exit_price,
+                "pnl": trade_ret,
+            }
+        )
+
+        i = exit_idx + 1
+
+    equity = equity.ffill()
+
+    trade_returns = pd.Series([t["pnl"] for t in trades], dtype=float)
+    total_return = equity.iloc[-1] - 1.0 if len(equity) else 0.0
+    bars_per_year = BARS_PER_YEAR
+    annualized_return = (
+        (1 + total_return) ** (bars_per_year / len(data)) - 1.0 if len(data) else 0.0
+    )
+    annualized_vol = data["close"].pct_change().std() * np.sqrt(bars_per_year)
+    sharpe = float(annualized_return / annualized_vol) if annualized_vol > 0 else 0.0
+    max_dd = _max_drawdown(equity) if len(equity) else 0.0
+    hit_rate = float((trade_returns > 0).mean()) if len(trade_returns) else 0.0
+
+    avg_holding_bars = float(hold_bars) if trades else 0.0
+
+    debug = {
+        "n_bars": len(data),
+        "hold_bars": hold_bars,
+        "threshold": threshold,
+        "regime": regime,
+        "pred_mean": pred_mean,
+        "pred_std": pred_std,
+        "pred_abs_p90": pred_abs_p90,
+        "pred_abs_p95": pred_abs_p95,
+        "signal_counts": signal_counts,
+        "trade_count": float(len(trades)),
+        "avg_holding_bars": avg_holding_bars,
+    }
+
+    metrics = {
+        "total_return": float(total_return),
+        "annualized_return": float(annualized_return),
+        "annualized_vol": float(annualized_vol) if not np.isnan(annualized_vol) else 0.0,
+        "sharpe": float(sharpe),
+        "max_drawdown": float(max_dd),
+        "hit_rate": float(hit_rate),
+        "trade_count": float(len(trades)),
+    }
+
+    return BacktestResult(
+        equity=equity,
+        metrics=metrics,
+        trades=pd.DataFrame(trades),
+        debug=debug,
     )
