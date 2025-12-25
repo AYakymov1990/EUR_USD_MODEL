@@ -18,17 +18,10 @@ M15_RET_VOL_WINDOW = 20
 ADX_TREND_THRESHOLD = 25.0
 H1_EMA_PERIOD = 50
 LOG_RET_NORM_CLIP = 10.0
-VOL_Z_WINDOW = 50
-DOW_PERIOD = 7
 
 
 def build_m15_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Build M15-level technical features for EUR/USD.
-
-    Adds indicators, returns, volatility, time-of-day, and price-action features,
-    including: range_rel, body_rel, upper_wick_rel, lower_wick_rel, volume_z,
-    sin_dow, cos_dow.
-    """
+    """Build M15-level technical features for EUR/USD."""
     data = df.copy()
 
     ema_20 = EMAIndicator(close=data["close"], window=M15_EMA_FAST).ema_indicator()
@@ -57,30 +50,10 @@ def build_m15_features(df: pd.DataFrame) -> pd.DataFrame:
     data["atr_14_norm"] = data["atr_14"] / data["close"]
     data["trend_strength_m15"] = data["ema_20_50_diff"] / data["atr_14"].replace(0, np.nan)
 
-    close_safe = data["close"].replace(0, np.nan)
-    data["range_rel"] = (data["high"] - data["low"]) / close_safe
-    data["body_rel"] = (data["close"] - data["open"]) / close_safe
-    data["upper_wick_rel"] = (
-        data["high"] - data[["open", "close"]].max(axis=1)
-    ) / close_safe
-    data["lower_wick_rel"] = (
-        data[["open", "close"]].min(axis=1) - data["low"]
-    ) / close_safe
-    data["range_rel"] = data["range_rel"].clip(lower=0)
-    data["upper_wick_rel"] = data["upper_wick_rel"].clip(lower=0)
-    data["lower_wick_rel"] = data["lower_wick_rel"].clip(lower=0)
-
-    volume_mean = data["volume"].rolling(VOL_Z_WINDOW).mean()
-    volume_std = data["volume"].rolling(VOL_Z_WINDOW).std()
-    data["volume_z"] = (data["volume"] - volume_mean) / volume_std.replace(0, np.nan)
-
     data["hour"] = data["time"].dt.hour
     data["minute"] = data["time"].dt.minute
     data["sin_hour"] = np.sin(2 * np.pi * data["hour"] / 24)
     data["cos_hour"] = np.cos(2 * np.pi * data["hour"] / 24)
-    data["dow"] = data["time"].dt.dayofweek
-    data["sin_dow"] = np.sin(2 * np.pi * data["dow"] / DOW_PERIOD)
-    data["cos_dow"] = np.cos(2 * np.pi * data["dow"] / DOW_PERIOD)
     data["adx_above_threshold"] = (data["adx_14"] > ADX_TREND_THRESHOLD).astype(int)
 
     return data
@@ -107,10 +80,22 @@ def merge_m15_with_h1(
     return merged
 
 
-def add_target(df: pd.DataFrame, horizon: int = 3) -> pd.DataFrame:
-    """Add forward-return target column for a given horizon (in M15 bars)."""
+def add_target(
+    df: pd.DataFrame,
+    horizon: int = 3,
+    price_col: str = "close",
+    target_col: str = "target",
+    entry_shift: int = 0,
+) -> pd.DataFrame:
+    """Add forward-return target column for a given horizon (in M15 bars).
+
+    If execution enters on the next bar, set entry_shift=1 and
+    horizon=hold_bars to align the target with backtest returns.
+    """
     data = df.copy()
-    data["target"] = data["close"].shift(-horizon) / data["close"] - 1
+    base = data[price_col].shift(-entry_shift)
+    fut = data[price_col].shift(-(entry_shift + horizon))
+    data[target_col] = fut / base - 1
     return data
 
 
@@ -125,13 +110,6 @@ def validate_no_nans(df: pd.DataFrame, cols: list[str]) -> None:
     bad = na_counts[na_counts > 0]
     if not bad.empty:
         raise ValueError(f"NaNs detected in columns: {bad.to_dict()}")
-
-
-def price_action_sanity_checks(df: pd.DataFrame) -> None:
-    """Basic sanity checks for price-action features."""
-    cols = ["range_rel", "upper_wick_rel", "lower_wick_rel"]
-    if (df[cols] < -1e-12).any().any():
-        raise ValueError("Negative wick/range values detected beyond tolerance.")
 
 
 def get_feature_columns() -> list[str]:
@@ -151,17 +129,10 @@ def get_feature_columns() -> list[str]:
         "roll_vol_20",
         "log_ret_1_norm",
         "trend_strength_m15",
-        "range_rel",
-        "body_rel",
-        "upper_wick_rel",
-        "lower_wick_rel",
-        "volume_z",
         "ema_50_h1",
         "h1_trend_flag",
         "h1_trend_distance",
         "sin_hour",
         "cos_hour",
-        "sin_dow",
-        "cos_dow",
         "adx_above_threshold",
     ]
