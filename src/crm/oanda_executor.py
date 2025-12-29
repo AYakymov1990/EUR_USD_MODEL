@@ -10,6 +10,17 @@ import requests
 from .config import CRMConfig
 
 
+def _resolve_domain(cfg: CRMConfig) -> str:
+    """Map env to correct OANDA host."""
+    env = cfg.oanda_env.lower()
+    if env in {"practice", "fxpractice"}:
+        return "api-fxpractice.oanda.com"
+    if env in {"live", "fxtrade", "trade"}:
+        return "api-fxtrade.oanda.com"
+    # Fallback: treat unknown as practice to stay safe
+    return "api-fxpractice.oanda.com"
+
+
 def _headers(cfg: CRMConfig) -> Dict[str, str]:
     return {
         "Content-Type": "application/json",
@@ -24,7 +35,8 @@ def place_market_order(
 ) -> Tuple[bool, Dict[str, Any]]:
     if cfg.demo_mode or not cfg.allow_live:
         return False, {"message": "Demo mode: order not sent"}
-    url = f"https://api-{cfg.oanda_env}.oanda.com/v3/accounts/{cfg.oanda_account_id}/orders"
+    domain = _resolve_domain(cfg)
+    url = f"https://{domain}/v3/accounts/{cfg.oanda_account_id}/orders"
     payload = {
         "order": {
             "type": "MARKET",
@@ -45,7 +57,8 @@ def place_market_order(
 def fetch_account(cfg: CRMConfig) -> Dict[str, Any]:
     if cfg.demo_mode or not cfg.allow_live:
         return {"demo": True}
-    url = f"https://api-{cfg.oanda_env}.oanda.com/v3/accounts/{cfg.oanda_account_id}/summary"
+    domain = _resolve_domain(cfg)
+    url = f"https://{domain}/v3/accounts/{cfg.oanda_account_id}/summary"
     try:
         resp = requests.get(url, headers=_headers(cfg), timeout=cfg.timeout)
         if resp.ok:

@@ -8,8 +8,9 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import torch
+from torch.serialization import add_safe_globals
 
-from src.model import predict
+from src.model import predict, MLPRegressor
 
 
 def load_artifacts(model_path: Path, scaler_path: Path) -> Tuple[Any, Any]:
@@ -18,7 +19,13 @@ def load_artifacts(model_path: Path, scaler_path: Path) -> Tuple[Any, Any]:
         raise FileNotFoundError(f"Model artifact not found: {model_path}")
     if not scaler_path.exists():
         raise FileNotFoundError(f"Scaler artifact not found: {scaler_path}")
-    model = torch.load(model_path, map_location="cpu")
+    # Allowlist our model class for safe loading
+    add_safe_globals([MLPRegressor])
+    try:
+        model = torch.load(model_path, map_location="cpu", weights_only=False)
+    except TypeError:
+        # For older torch without weights_only param
+        model = torch.load(model_path, map_location="cpu")
     with scaler_path.open("rb") as f:
         scaler = pickle.load(f)
     model.eval()
