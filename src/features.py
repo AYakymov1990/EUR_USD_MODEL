@@ -85,18 +85,35 @@ def add_target(
     horizon: int = 3,
     price_col: str = "close",
     target_col: str = "target",
-    entry_shift: int = 0,
 ) -> pd.DataFrame:
     """Add forward-return target column for a given horizon (in M15 bars).
 
-    If execution enters on the next bar, set entry_shift=1 and
-    horizon=hold_bars to align the target with backtest returns.
+    Execution enters on the next bar and exits after `horizon` bars,
+    matching backtest_long_short_horizon semantics.
     """
     data = df.copy()
-    base = data[price_col].shift(-entry_shift)
-    fut = data[price_col].shift(-(entry_shift + horizon))
+    base = data[price_col].shift(-1)
+    fut = data[price_col].shift(-(1 + horizon))
     data[target_col] = fut / base - 1
     return data
+
+
+def check_target_alignment(
+    df: pd.DataFrame,
+    horizon: int,
+    price_col: str = "close",
+    target_col: str = "target",
+    eps: float = 1e-12,
+) -> float:
+    """Print and assert alignment between target and execution returns."""
+    exec_ret = df[price_col].shift(-(1 + horizon)) / df[price_col].shift(-1) - 1
+    mask = df[target_col].notna() & exec_ret.notna()
+    diff = (df.loc[mask, target_col] - exec_ret.loc[mask]).abs()
+    max_abs_diff = float(diff.max()) if len(diff) else 0.0
+    print(f"max_abs_diff: {max_abs_diff}")
+    if max_abs_diff > eps:
+        raise AssertionError(f"Target misalignment: max_abs_diff={max_abs_diff}")
+    return max_abs_diff
 
 
 def drop_na_for_training(df: pd.DataFrame) -> pd.DataFrame:

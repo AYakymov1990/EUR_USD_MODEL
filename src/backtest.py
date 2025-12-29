@@ -34,6 +34,38 @@ def _max_drawdown(equity: pd.Series) -> float:
     return float(drawdown.min())
 
 
+def _monthly_return_stats(
+    equity: pd.Series,
+    time_index: pd.Series,
+) -> Dict[str, float]:
+    if len(equity) == 0:
+        return {
+            "mean_monthly": 0.0,
+            "median_monthly": 0.0,
+            "pct_positive_months": 0.0,
+            "worst_month": 0.0,
+            "best_month": 0.0,
+        }
+    series = pd.Series(equity.values, index=pd.to_datetime(time_index)).sort_index()
+    monthly_equity = series.resample("ME").last()
+    monthly_ret = monthly_equity.pct_change().dropna()
+    if monthly_ret.empty:
+        return {
+            "mean_monthly": 0.0,
+            "median_monthly": 0.0,
+            "pct_positive_months": 0.0,
+            "worst_month": 0.0,
+            "best_month": 0.0,
+        }
+    return {
+        "mean_monthly": float(monthly_ret.mean()),
+        "median_monthly": float(monthly_ret.median()),
+        "pct_positive_months": float((monthly_ret > 0).mean()),
+        "worst_month": float(monthly_ret.min()),
+        "best_month": float(monthly_ret.max()),
+    }
+
+
 def _calc_costs(position: pd.Series, cost_bps: float) -> pd.Series:
     cost_per_trade = cost_bps / 10000.0
     pos_prev = position.shift(1).fillna(0)
@@ -286,6 +318,8 @@ def backtest_long_short_horizon(
     cost_series = turnover * (cost_bps / 10000.0)
 
     strategy_ret = pos_series.values * ret_1 - cost_series.values
+    if not np.isfinite(strategy_ret).all():
+        raise AssertionError("NaNs or infs detected in strategy_ret")
     equity = pd.Series((1 + strategy_ret).cumprod(), index=data.index, dtype=float)
 
     if trades:
@@ -328,6 +362,7 @@ def backtest_long_short_horizon(
         float(wins.sum()) / (np.abs(losses.sum()) + eps) if len(trade_returns) else 0.0
     )
     monthly_return_est = float(np.exp(np.log1p(total_return) / (years * 12)) - 1.0)
+    monthly_stats = _monthly_return_stats(equity, data["time"])
 
     avg_holding_bars = float(hold_bars) if trades else 0.0
 
@@ -387,6 +422,11 @@ def backtest_long_short_horizon(
         "payoff_ratio": float(payoff_ratio),
         "profit_factor": float(profit_factor),
         "monthly_return_est": float(monthly_return_est),
+        "mean_monthly": monthly_stats["mean_monthly"],
+        "median_monthly": monthly_stats["median_monthly"],
+        "pct_positive_months": monthly_stats["pct_positive_months"],
+        "worst_month": monthly_stats["worst_month"],
+        "best_month": monthly_stats["best_month"],
     }
 
     if len(trades) > 0 and consistency_abs > 1e-5:
