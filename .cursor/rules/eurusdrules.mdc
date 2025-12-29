@@ -1,148 +1,58 @@
-# === General project rules ===
-- rule: Main project language — Python
-  details: >
-    Use Python 3.10+.
-    Prefer the standard library and popular packages (pandas, numpy, matplotlib, pytorch, ta/pandas-ta).
-    Do not suggest solutions in other programming languages.
+# === Проект: Trader CRM для EUR/USD ===
 
-- rule: Project structure
+- rule: Цель проекта  
   details: >
-    The project is split into:
-      - notebooks/ — Jupyter notebooks (.ipynb) for experiments and thesis-related work.
-      - src/ — reusable code (utilities: data loading, indicator calculation, models, backtesting).
-      - data/ — local data (CSV/Parquet), not committed to git.
-      - config/ — configuration files (e.g. oanda_config.json), without API keys in the repo.
-    When generating new code, prefer placing functions in src/ and only calling them from notebooks.
+    Демонстрационная CRM для трейдера: показывает сигнал модели (с объяснением),
+    отправляет уведомление, оператор подтверждает Long/Short, затем заявка уходит в OANDA v20.
+    По умолчанию запускается в demo mode (реплей тестового среза, без реальных ордеров).
+    Архитектура модели и обучения заморожена; меняем только обвязку/CRM.
 
-# === Code style ===
-- rule: PEP8 and readability
+- rule: Архитектура  
   details: >
-    Follow PEP8.
-    Use clear variable and function names in snake_case.
-    Target a maximum line length of ~100 characters.
-    Avoid cryptic short names (a, b, c) except in simple loops.
+    Слои:
+      - Model layer (src.features, src.model, src.backtest, notebooks 02/03) — не менять, только использовать.
+      - CRM layer (Streamlit UI + модули src.crm.*) — сбор сигналов, объяснение, логирование, исполнение.
+      - Интеграции: OANDA v20 REST (practice по умолчанию), SQLite-аудит (signals/actions/orders/fills).
+    Данные/артефакты: data/eurusd_features.parquet, data/artifacts/selected_config.json (+ сохраненные модели/скейлеры).
 
-- rule: Docstrings and comments
+- rule: Безопасность и конфиг  
   details: >
-    For key functions and classes, write docstrings in Google or NumPy style.
-    Add short comments in non-trivial places, especially where time shifts are involved
-    (shift for target, lags for features), to avoid confusion.
+    Никогда не коммитим ключи. Используем .env / переменные окружения / config/*.json (без секретов).
+    По умолчанию practice environment; live включается явно.
+    Любой сетевой вызов оборачиваем try/except и логируем ошибку без утечки ключей.
 
-- rule: Imports
+- rule: Политика сигналов  
   details: >
-    Group imports:
-      1) standard library,
-      2) third-party libraries,
-      3) local modules (src.*).
-    Use explicit imports (from src.features import build_features), avoid `import *`.
+    Сигнал = y_hat, режимы и порог из selected_config.json. Торгуем только после явного подтверждения оператора.
+    В demo mode исполнение отключено, но сигнал/действия пишем в SQLite для аудита и UI.
+    Объяснение сигнала (короткое, RU) выводится в UI и уведомления.
 
-# === ML and trading specifics ===
-- rule: Project goal
+- rule: Логирование и аудит  
   details: >
-    The main goal is to build and train a linear regression model (in PyTorch)
-    to predict EUR/USD returns on a horizon of N=3 bars (M15),
-    and integrate it into a simple trend-following trading strategy with backtesting.
+    Логируем все сигналы, нажатия LONG/SHORT, отправленные ордера, ответы OANDA, ошибки.
+    Аудит храним в SQLite (tables: signals, actions, orders/fills, metrics_snapshots).
+    В UI показываем метрики: equity, winrate, profit_factor, max_drawdown, hit_rate.
 
-- rule: Target construction
+- rule: Демонстрация  
   details: >
-    Target: y_t = Close_{t+3} / Close_t - 1 (return over the next 3 bars).
-    All features at time t must use only information <= t.
-    Strictly avoid look-ahead bias (no future data in features).
+    Для демо до 15 января: приложение должно работать end-to-end в demo mode без сети.
+    В live режиме (опционально) нужно иметь возможность получить аккаунт/баланс и выставить market order после подтверждения.
+    UI (Streamlit) обязателен: последние сигналы + объяснение, кнопки Long/Short, состояние счёта, мини-метрики.
 
-- rule: Features
+- rule: Стиль кода  
   details: >
-    Core feature set:
-      - Prices and returns: close, ret_1, ret_3.
-      - M15 indicators: EMA(20), EMA(50), EMA20-EMA50 difference, RSI(14), ADX(14), ATR(14).
-      - H1 indicators: EMA(50) and/or a trend direction flag (price above/below EMA50).
-    When adding new features, always check:
-      - they do not use future values,
-      - they do not just duplicate existing information.
+    Python 3.10+, PEP8, понятные имена (snake_case). Docstrings на ключевых функциях.
+    Импорты: stdlib -> third-party -> local. Код на английских идентификаторах, пояснения/доки на русском.
+    Конфигурация через env/dataclass-конфиг, без глобальных констант с секретами.
 
-- rule: Time-based data splitting
+- rule: Файловая структура  
   details: >
-    Split data into train/val/test by time, without shuffling:
-      - train — earliest period,
-      - val — middle period,
-      - test — most recent period.
-    Never use `shuffle=True` for time series.
-    Any normalization/scaling must be fit on train only, then applied to val/test.
+    notebooks/01_*, 02_*, 03_* — эксперименты и обучение.
+    src/ — прод-код, теперь включает src.crm.* (config, data_feed, inference, explain, signals, oanda_executor, storage, metrics_live, scheduler).
+    docs/ — архитектура и планы (см. docs/00_overview.md и далее).
 
-- rule: Model
+- rule: Готовность демо  
   details: >
-    Base model — linear regression in PyTorch:
-      - Simple nn.Linear(input_dim, 1).
-      - Loss function: MSELoss.
-      - Optimizer: Adam or SGD.
-      - L2 regularization (weight_decay) is allowed to reduce overfitting.
-    Do not propose complex deep networks as the main solution (they can be discussed as extensions).
-
-- rule: Model evaluation
-  details: >
-    For regression, always compute:
-      - MSE,
-      - MAE,
-      - R^2,
-      - comparison with baselines (e.g. y_hat=0, or y_hat=mean).
-    Additionally, inspect the distribution of predictions and true targets on the test set.
-
-- rule: Trading logic on top of the model
-  details: >
-    Build signals based on the prediction:
-      - If y_hat > threshold_long -> long.
-      - If y_hat < threshold_short -> short.
-    By default thresholds can be 0, but providing configurable thresholds is encouraged.
-    Explicitly define how long trades are held: fixed horizon (N bars) or until a reverse signal.
-
-# === OANDA and config handling ===
-- rule: API key safety
-  details: >
-    Never hardcode real API keys into the code.
-    Store keys in .env or config/oanda_config.json, which is not committed to git.
-    Use placeholders in examples (YOUR_OANDA_API_KEY).
-
-- rule: OANDA client
-  details: >
-    When generating code for OANDA:
-      - implement historical candles retrieval for EUR/USD on M15 and H1,
-      - allow specifying time ranges,
-      - save data into data/ as CSV or Parquet.
-    Always wrap network calls in try/except and log errors.
-
-# === Jupyter notebooks ===
-- rule: Notebook style
-  details: >
-    In notebooks:
-      - Separate code and explanations using markdown cells.
-      - Number notebooks by pipeline stage: 01_, 02_, 03_.
-      - Keep only the pipeline skeleton and visualization in notebooks,
-        and move heavy logic (functions) into src/.
-
-- rule: Reproducibility
-  details: >
-    Notebooks should run top-to-bottom without errors when data is available in data/.
-    Do not use hardcoded absolute paths (like C:\\...); use relative paths.
-
-# === Quality and refactoring ===
-- rule: Prefer clean code
-  details: >
-    If code becomes long or duplicated, refactor into functions/classes in src/.
-    Use descriptive names (load_oanda_data, build_features, train_linear_model, backtest_strategy).
-
-- rule: Logs and errors
-  details: >
-    For long-running processes (data download, model training, backtesting), log key steps.
-    Catch errors and show clear messages instead of raw stack traces.
-
-# === Interaction with the user (project author) ===
-- rule: Language of communication
-  details: >
-    Write comments, markdown explanations, and tips in Russian,
-    but use English identifiers in code.
-
-- rule: Interpretability first
-  details: >
-    When choosing between “complex but slightly better metrics” and
-    “simple and well-explained solution”, prefer the simple and interpretable option,
-    because this is a thesis project.
-
+    Done, если: (1) выбранный конфиг/модель загружаются, (2) сигналы и объяснения отображаются,
+    (3) demo mode генерирует сигналы и пишет их в SQLite, (4) UI показывает счёт/метрики,
+    (5) live mode может отправить заявку после подтверждения (при наличии ключей).
