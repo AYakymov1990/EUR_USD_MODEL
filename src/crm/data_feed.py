@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generator, Iterable, Optional
+from typing import Generator, Iterable, Optional, Tuple
 
 import pandas as pd
+import requests
 
 from .config import CRMConfig
+from .oanda_executor import _resolve_domain
 
 
 def demo_feed(cfg: CRMConfig) -> Generator[pd.Series, None, None]:
@@ -28,19 +30,70 @@ def demo_feed(cfg: CRMConfig) -> Generator[pd.Series, None, None]:
 
 def live_candles_from_oanda(
     cfg: CRMConfig,
-    oanda_client: Optional[object] = None,
-) -> Iterable[dict]:
+    instrument: str,
+    granularity: str,
+    count: int = 300,
+    price: str = "M",
+) -> pd.DataFrame:
     """
-    Placeholder for live OANDA candle fetching.
-
-    Returns an empty iterable in demo mode; caller should provide a client in live mode.
+    Fetch candles from OANDA. Returns empty DF on failure (caller handles graceful degradation).
     """
     if cfg.demo_mode or not cfg.allow_live:
-        return []
-    if oanda_client is None:
-        return []
-    # The concrete implementation should call OANDA /candles with cfg.instrument/cfg.granularity.
-    return []
+        return pd.DataFrame()
+
+    domain = _resolve_domain(cfg)
+    url = f"https://{domain}/v3/instruments/{instrument}/candles"
+    params = {
+        "granularity": granularity,
+        "count": count,
+        "price": price,
+    }
+    headers = {
+        "Authorization": f"Bearer {cfg.oanda_api_key}",
+        "Content-Type": "application/json",
+    }
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=cfg.timeout)
+        resp.raise_for_status()
+    except Exception:
+        return pd.DataFrame()
+
+    data = resp.json()
+    candles = data.get("candles", [])
+    rows: list[dict[str, object]] = []
+    for c in candles:
+        if not c.get("complete"):
+            continue
+        mid = c.get("mid", {})
+        rows.append(
+            {
+                "time": pd.to_datetime(c.get("time")),
+                "open": float(mid.get("o")),
+                "high": float(mid.get("h")),
+                "low": float(mid.get("l")),
+                "close": float(mid.get("c")),
+                "volume": int(c.get("volume", 0)),
+            }
+        )
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df = df.sort_values("time").reset_index(drop=True)
+    return df
+
+
+def get_latest_live_window(
+    cfg: CRMConfig,
+    instrument: Optional[str] = None,
+    m15_count: int = 300,
+    h1_count: int = 300,
+) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+    """Fetch recent M15 and H1 windows for feature computation."""
+    inst = instrument or cfg.instrument
+    df_m15 = live_candles_from_oanda(cfg, inst, "M15", count=m15_count)
+    df_h1 = live_candles_from_oanda(cfg, inst, "H1", count=h1_count)
+    if df_m15.empty or df_h1.empty:
+        return None, None
+    return df_m15, df_h1
 
 
 def parse_time(ts: str | datetime) -> datetime:

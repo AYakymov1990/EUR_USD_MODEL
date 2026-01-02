@@ -33,6 +33,16 @@ class CRMConfig:
     selected_config_path: Path = Path("data/artifacts/selected_config.json")
     sqlite_path: Path = Path("data/artifacts/trader_crm.sqlite")
     max_demo_rows: int = 2_000
+    email_smtp_host: Optional[str] = None
+    email_smtp_port: int = 587
+    email_user: Optional[str] = None
+    email_password: Optional[str] = None
+    email_to: Optional[str] = None
+    email_from: Optional[str] = None
+
+    @property
+    def allow_email(self) -> bool:
+        return all([self.email_smtp_host, self.email_user, self.email_password, self.email_to])
 
     @property
     def allow_live(self) -> bool:
@@ -67,4 +77,10 @@ def load_config(env: Optional[Dict[str, Any]] = None, config_path: Optional[Path
         selected_config_path=Path(_get("SELECTED_CONFIG", "data/artifacts/selected_config.json")),
         sqlite_path=Path(_get("SQLITE_PATH", "data/artifacts/trader_crm.sqlite")),
         max_demo_rows=int(_get("MAX_DEMO_ROWS", 2_000)),
+        email_smtp_host=_get("EMAIL_SMTP_HOST", None),
+        email_smtp_port=int(_get("EMAIL_SMTP_PORT", 587)),
+        email_user=_get("EMAIL_USER", None),
+        email_password=_get("EMAIL_PASSWORD", None),
+        email_to=_get("EMAIL_TO", None),
+        email_from=_get("EMAIL_FROM", None),
     )
