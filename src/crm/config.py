@@ -39,6 +39,11 @@ class CRMConfig:
     email_password: Optional[str] = None
     email_to: Optional[str] = None
     email_from: Optional[str] = None
+    signal_mode: str = "model"
+    use_ml_for_fib: bool = False
+    fib_ml_threshold: float = 0.0
+    detailed_logging: bool = True
+    news_api_key: Optional[str] = None
 
     @property
     def allow_email(self) -> bool:
@@ -83,4 +88,9 @@ def load_config(env: Optional[Dict[str, Any]] = None, config_path: Optional[Path
         email_password=_get("EMAIL_PASSWORD", None),
         email_to=_get("EMAIL_TO", None),
         email_from=_get("EMAIL_FROM", None),
+        signal_mode=str(_get("SIGNAL_MODE", "model")).lower(),
+        use_ml_for_fib=str(_get("USE_ML_FOR_FIB", "false")).lower() in {"1", "true", "yes"},
+        fib_ml_threshold=float(_get("FIB_ML_THRESHOLD", 0.0)),
+        detailed_logging=str(_get("DETAILED_LOGGING", "true")).lower() in {"1", "true", "yes"},
+        news_api_key=_get("NEWS_API_KEY", None),
     )
