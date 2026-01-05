@@ -8,3 +8,5 @@ python-dotenv
 python-dateutil
 jupyter
 streamlit
+fastapi
+uvicorn[standard]

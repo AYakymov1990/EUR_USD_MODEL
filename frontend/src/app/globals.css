@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0f172a;
+  background-color: #f7f8fb;
+}
+
+body {
+  margin: 0;
+  background-color: #f7f8fb;
+  color: #0f172a;
+  font-feature-settings: 'liga', 'kern';
+  -webkit-font-smoothing: antialiased;
+}

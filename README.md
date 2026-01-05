@@ -50,3 +50,22 @@ python scripts/train_model.py --retrain
   DEMO_MODE=false OANDA_ENV=practice streamlit run app.py
   ```
 В live режиме данные подтягиваются через OANDA, модель даёт сигнал, после подтверждения кнопкой LONG/SHORT отправляется market-ордер в practice.
+
+## Backend API (FastAPI)
+- Запуск API (реюзит те же артефакты/демо-данные, CORS для localhost:3000):
+  ```bash
+  source .venv/bin/activate
+  uvicorn src.api.main:app --reload --port 8000
+  ```
+- Основные эндпоинты:  
+  - `GET /health`, `GET /config` — статус/режимы  
+  - `GET /account` — данные счёта (demo -> `{demo: true}`)  
+  - `POST /signals/generate` — сгенерировать сигнал (демо: следующий ряд из parquet)  
+  - `GET /signals/recent?limit=50` — журнал сигналов из sqlite  
+  - `POST /orders/market` — отправить рыночный ордер (в demo не отправляет, только логирует)  
+  - `GET /news?limit=5` — Новости EURUSD (NewsAPI при наличии NEWS_API_KEY)
+
+## Frontend (Next.js UI)
+- New landing UI lives in `frontend/` (Next.js 13 + Tailwind), mirroring the twenty.com hero for the Trader CRM.
+- Install deps and run locally: `cd frontend && npm install && npm run dev` (default port 3000).
+- Follow `docs/05_frontend_doc.md` for pixel-parity workflow (capture reference screenshot, compare via Playwright, iterate).
