@@ -35,6 +35,7 @@ def apply_regime(row: pd.Series, regime: Optional[str]) -> bool:
 def make_signal(row: pd.Series, pred: float, cfg: Dict[str, Any]) -> Dict[str, Any]:
     threshold = float(cfg.get("threshold", 0.0))
     polarity = float(cfg.get("polarity", 1.0))
+    force_direction = str(cfg.get("force_direction", "") or "").lower()
     regime = cfg.get("regime")
     hold_bars = int(cfg.get("hold_bars", 3))
     cost_bps = float(cfg.get("cost_bps", 0.5))
@@ -46,7 +47,11 @@ def make_signal(row: pd.Series, pred: float, cfg: Dict[str, Any]) -> Dict[str, A
     regime_ok = apply_regime(row, regime)
 
     action = "none"
-    if pred_dir == 1 and regime_ok:
+    if force_direction in {"long", "short"}:
+        # Testing helper to bias toward a side regardless of threshold/regime.
+        action = force_direction
+        regime_ok = True
+    elif pred_dir == 1 and regime_ok:
         action = "long"
     elif pred_dir == -1 and regime_ok:
         action = "short"

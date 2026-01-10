@@ -118,6 +118,11 @@ def log_order_event(conn: sqlite3.Connection, ts: str, direction: str, size: flo
     conn.commit()
 
 
+def fetch_recent_orders(conn: sqlite3.Connection, limit: int = 100) -> List[sqlite3.Row]:
+    cur = conn.execute("SELECT * FROM orders ORDER BY id DESC LIMIT ?", (limit,))
+    return cur.fetchall()
+
+
 def fetch_recent_signals(conn: sqlite3.Connection, limit: int = 20) -> List[sqlite3.Row]:
     cur = conn.execute("SELECT * FROM signals ORDER BY id DESC LIMIT ?", (limit,))
     return cur.fetchall()

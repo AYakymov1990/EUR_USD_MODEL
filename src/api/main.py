@@ -9,8 +9,11 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import numpy as np
 
 from src.crm.config import CRMConfig, load_config
 from src.crm.data_feed import demo_feed, get_latest_live_window
@@ -23,6 +26,7 @@ from src.crm.signals import load_selected_config, make_signal
 from src.crm.storage import (
     ensure_schema,
     fetch_recent_signals,
+    fetch_recent_orders,
     get_connection,
     get_last_signal_time,
     log_action,
@@ -235,8 +239,26 @@ def fetch_recent_news(cfg: CRMConfig, limit: int = 5) -> List[dict]:
         return []
 
 
+def _sanitize(obj: Any) -> Any:
+    """Recursively convert objects to JSON-serializable primitives."""
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, (np.generic,)):
+        return obj.item()
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [_sanitize(v) for v in obj]
+    if hasattr(obj, "model_dump"):
+        return _sanitize(obj.model_dump())
+    try:
+        return float(obj)
+    except Exception:
+        return str(obj)
+
+
 @app.get("/signals/recent")
-def signals_recent(limit: int = 50) -> dict:
+def signals_recent(limit: int = 50):
     rows = fetch_recent_signals(svc.conn, limit=limit)
     result = []
     for r in rows:
@@ -254,12 +276,13 @@ def signals_recent(limit: int = 50) -> dict:
                 "payload": payload_obj,
             }
         )
-    return {"items": result}
+    return JSONResponse(content=jsonable_encoder(_sanitize({"items": result})))
 
 
-@app.post("/signals/generate", response_model=SignalResponse)
-def generate_signal() -> SignalResponse:
-    return svc.generate_signal()
+@app.post("/signals/generate")
+def generate_signal():
+    sig = svc.generate_signal()
+    return JSONResponse(content=jsonable_encoder(_sanitize(sig)))
 
 
 @app.post("/orders/market")
@@ -273,3 +296,25 @@ def create_order(req: OrderRequest) -> dict:
     ok, resp = place_market_order(cfg, units=units)
     log_order_event(svc.conn, ts, direction, units, "sent" if ok else "skipped", resp)
     return {"ok": ok, "response": resp}
+
+
+@app.get("/orders/recent")
+def orders_recent(limit: int = 100):
+    rows = fetch_recent_orders(svc.conn, limit=limit)
+    result = []
+    for r in rows:
+        resp = r["response"]
+        try:
+            resp_obj = resp if isinstance(resp, dict) else json.loads(resp)
+        except Exception:
+            resp_obj = {"raw": str(resp)}
+        result.append(
+            {
+                "ts": r["ts"],
+                "direction": r["direction"],
+                "size": r["size"],
+                "status": r["status"],
+                "response": resp_obj,
+            }
+        )
+    return JSONResponse(content=jsonable_encoder(_sanitize({"items": result})))
