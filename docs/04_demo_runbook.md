@@ -1,9 +1,9 @@
-# Демонстрационный ранбук
+# Runbook demonstracyjny
 
-## Подготовка
-1. Установить зависимости `pip install -r requirements.txt` (Streamlit при необходимости `pip install streamlit`).
-2. Проверить, что есть `data/eurusd_features.parquet` и `data/artifacts/selected_config.json` (+ сохранённые модель/скейлер).
-3. Создать `.env` (опционально для live):
+## Przygotowanie
+1. Zainstaluj zależności `pip install -r requirements.txt` (Streamlit w razie potrzeby `pip install streamlit`).
+2. Upewnij się, że masz `data/eurusd_features.parquet` i `data/artifacts/selected_config.json` (+ zapisany model/scaler).
+3. Utwórz `.env` (opcjonalnie dla live):
    ```
    OANDA_API_KEY=...
    OANDA_ACCOUNT_ID=...
@@ -11,24 +11,24 @@
    DEMO_MODE=true
    ```
 
-## Запуск демо (offline)
-1. `python -c "import src.crm"` — проверка импортов.
-2. `streamlit run app.py -- --demo` (или переменная `DEMO_MODE=true`):
-   - Источник данных: реплей тестового среза.
-   - Сигналы пишутся в `data/artifacts/trader_crm.sqlite`.
-   - Кнопки LONG/SHORT активны, но исполнение не уходит в OANDA.
+## Uruchomienie demo (offline)
+1. `python -c "import src.crm"` — sprawdzenie importów.
+2. `streamlit run app.py -- --demo` (lub zmienna `DEMO_MODE=true`):
+   - Źródło danych: replay testowego wycinka.
+   - Sygnały zapisywane do `data/artifacts/trader_crm.sqlite`.
+   - Przyciski LONG/SHORT aktywne, ale wykonanie nie trafia do OANDA.
 
-## Запуск live (опционально)
-1. Прописать ключи в `.env`, установить `DEMO_MODE=false`.
-2. `streamlit run app.py` — данные с OANDA, подтверждённые заявки уходят в practice/live по флагу.
+## Uruchomienie live (opcjonalnie)
+1. Wpisz klucze do `.env`, ustaw `DEMO_MODE=false`.
+2. `streamlit run app.py` — dane z OANDA, potwierdzone zlecenia trafiają do practice/live wg flagi.
 
-## Что должно работать
-- Видно последний сигнал, объяснение, confidence.
-- Кнопки подтверждения → запись действия в SQLite.
-- В demo mode: появляется синтетическая equity/метрики в панели.
-- В live (при ключах): отображается баланс/NAV, открытые сделки; отправка ордера после подтверждения.
+## Co powinno działać
+- Widać ostatni sygnał, wyjaśnienie, confidence.
+- Przyciski potwierdzenia → zapis akcji w SQLite.
+- W trybie demo: pojawia się syntetyczna equity/metryki w panelu.
+- W trybie live (przy kluczach): widać balans/NAV, otwarte transakcje; wysyłka zlecenia po potwierdzeniu.
 
-## Устранение неполадок
-- Нет данных: убедитесь, что `data/eurusd_features.parquet` на месте.
-- Нет модели: сохраните обученную модель/скейлер в `data/artifacts/` (см. ноутбук 03).
-- Ошибки OANDA: проверьте ключи и `OANDA_ENV`; смотрите таблицу orders/errors в SQLite.
+## Rozwiązywanie problemów
+- Brak danych: upewnij się, że `data/eurusd_features.parquet` jest na miejscu.
+- Brak modelu: zapisz wytrenowany model/scaler w `data/artifacts/` (zob. notebook 03).
+- Błędy OANDA: sprawdź klucze i `OANDA_ENV`; zajrzyj do tabel orders/errors w SQLite.

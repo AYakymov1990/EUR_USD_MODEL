@@ -1,30 +1,30 @@
-# Архитектура (описание)
+# Architektura (opis)
 
-## Слои
-- **Model layer (заморожен)**: `src/features.py`, `src/model.py`, `src/backtest.py`, ноутбуки 02/03. Отвечает за данные/фичи, обучение, бектест, выбор конфига.
-- **CRM layer**: `src/crm/` — работа с конфигом, получение свечей/фичей, инференс, объяснение, генерация сигналов/порогов, хранилище событий, интеграция OANDA, расчёт живых метрик, планировщик.
-- **UI layer**: `app.py` (Streamlit) — визуализация сигналов/метрик, кнопки подтверждения.
+## Warstwy
+- **Warstwa modelu (zamrożona)**: `src/features.py`, `src/model.py`, `src/backtest.py`, notebooki 02/03. Odpowiada za dane/cechy, trening, backtest, wybór konfiguracji.
+- **Warstwa CRM**: `src/crm/` — praca z configiem, pobieranie świec/cech, inferencja, wyjaśnienia, generowanie sygnałów/progów, magazyn zdarzeń, integracja OANDA, liczenie bieżących metryk, scheduler.
+- **Warstwa UI**: `app.py` (Streamlit) — wizualizacja sygnałów/metryk, przyciski potwierdzeń.
 
-## Поток данных (demo mode)
-1. `data_feed` читает свечи/фичи из тестового среза (реплей).
-2. `features_adapter` подготавливает входы под модель.
-3. `inference` грузит скейлер/модель, выдаёт `y_hat` + метаданные.
-4. `signals` применяет thresholds/regime из `selected_config.json`, рассчитывает сигнал и confidence.
-5. `explain` строит краткое RU-объяснение по ключевым признакам/предсказанию.
-6. `storage` сохраняет сигнал, `metrics_live` обновляет сводки, UI показывает.
-7. При нажатии LONG/SHORT записываем действие, в live режиме `oanda_executor` отправляет ордер.
+## Przepływ danych (tryb demo)
+1. `data_feed` czyta świece/cechy z testowego wycinka (replay).
+2. `features_adapter` przygotowuje wejścia dla modelu.
+3. `inference` ładuje scaler/model, zwraca `y_hat` + metadane.
+4. `signals` stosuje thresholds/regime z `selected_config.json`, liczy sygnał i confidence.
+5. `explain` buduje krótkie objaśnienie PL po kluczowych cechach/predykcji.
+6. `storage` zapisuje sygnał, `metrics_live` odświeża podsumowania, UI wyświetla.
+7. Po kliknięciu LONG/SHORT zapisujemy akcję, w trybie live `oanda_executor` wysyła zlecenie.
 
-## Поток данных (live mode)
-1. `data_feed` тянет свечи с OANDA (безопасно, practice по умолчанию).
-2. Далее шаги как в demo mode.
-3. `oanda_executor` отправляет/закрывает ордера, пишет ответы в `storage`.
+## Przepływ danych (tryb live)
+1. `data_feed` pobiera świece z OANDA (bezpiecznie, domyślnie practice).
+2. Dalej kroki jak w trybie demo.
+3. `oanda_executor` wysyła/zamyka zlecenia, zapisuje odpowiedzi w `storage`.
 
-## Артефакты
-- `data/artifacts/selected_config.json` — порог/режим/hold_bars/polarity.
-- Сохранённые модель/скейлер (ожидаются рядом в `data/artifacts/`).
-- SQLite база аудита (`data/artifacts/trader_crm.sqlite`).
+## Artefakty
+- `data/artifacts/selected_config.json` — próg/reżim/hold_bars/polarity.
+- Zapisane model/scaler (oczekiwane obok w `data/artifacts/`).
+- Baza audytu SQLite (`data/artifacts/trader_crm.sqlite`).
 
-## Безопасность
-- Ключи/аккаунты только через `.env`/окружение.
-- Логи без секретов, сетевые ошибки — с ясным текстом.
-- Исполнение в demo mode по умолчанию.
+## Bezpieczeństwo
+- Klucze/konta tylko przez `.env`/środowisko.
+- Logi bez sekretów, błędy sieciowe — z czytelnym tekstem.
+- Wykonanie w trybie demo domyślnie.

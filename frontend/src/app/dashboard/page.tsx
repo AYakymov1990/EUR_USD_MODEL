@@ -198,7 +198,7 @@ function HeroCard({ config }: { config: ConfigResponse | null }) {
             Open-Source CRM
           </h1>
           <p className="mt-6 max-w-xl text-xl leading-8 text-neutral-600">
-            {config?.demo_mode ? 'DEMO режим на реплее данных.' : 'LIVE режим (practice) с OANDA.'}
+            {config?.demo_mode ? 'Tryb DEMO na replayu danych.' : 'Tryb LIVE (practice) z OANDA.'}
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-neutral-700">
             <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold">
@@ -232,7 +232,7 @@ function SignalCTA({
         <div>
           <p className="text-xs font-semibold uppercase text-neutral-500">Last signal</p>
           <p className="text-lg font-bold text-neutral-900">{lastSignal?.action ?? '—'}</p>
-          <p className="text-sm text-neutral-600">{lastSignal?.ts ?? 'Нет сигналов'}</p>
+          <p className="text-sm text-neutral-600">{lastSignal?.ts ?? 'Brak sygnałów'}</p>
         </div>
         <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
           {status === 'loading' ? 'Loading…' : 'Ready'}
@@ -243,7 +243,7 @@ function SignalCTA({
           onClick={onGenerate}
           className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-neutral-800"
         >
-          Получить сигнал
+          Pobierz sygnał
         </button>
         <button
           onClick={() => onOrder('long')}
@@ -281,7 +281,7 @@ function AccountCard({ account, demo }: { account: AccountResponse | null; demo:
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Аккаунт</h3>
+        <h3 className="text-lg font-semibold">Konto</h3>
         <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
           {demo ? 'DEMO' : 'LIVE'}
         </span>
@@ -297,7 +297,7 @@ function AccountCard({ account, demo }: { account: AccountResponse | null; demo:
         </div>
       ) : (
         <p className="mt-3 text-sm text-neutral-600">
-          {demo ? 'Demo account summary' : 'Нет деталей аккаунта'}
+          {demo ? 'Podsumowanie konta demo' : 'Brak danych konta'}
         </p>
       )}
     </div>
@@ -337,23 +337,23 @@ export default function DashboardPage() {
           <AccountCard account={account} demo={!!config?.demo_mode} />
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Новости</h3>
+              <h3 className="text-lg font-semibold">Wiadomości</h3>
               <span className="text-xs text-neutral-500">/news API</span>
             </div>
-            <p className="mt-2 text-sm text-neutral-600">Подключите NewsAPI ключ, чтобы показать свежие EURUSD новости.</p>
+            <p className="mt-2 text-sm text-neutral-600">Podłącz klucz NewsAPI, aby pokazać świeże wiadomości EURUSD.</p>
             <button
               onClick={refresh}
               className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-700 hover:border-neutral-300"
             >
-              Refresh data
+              Odśwież dane
             </button>
           </div>
         </div>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Журнал сигналов</h3>
-            <span className="text-xs text-neutral-500">последние {signals.length || FALLBACK_ROWS.length}</span>
+            <h3 className="text-lg font-semibold">Dziennik sygnałów</h3>
+            <span className="text-xs text-neutral-500">ostatnie {signals.length || FALLBACK_ROWS.length}</span>
           </div>
           <div className="mt-3 overflow-auto">
             <table className="min-w-full divide-y divide-neutral-200 text-sm">
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                 {signals.length === 0 && (
                   <tr>
                     <td className="px-3 py-2 text-neutral-600" colSpan={4}>
-                      Журнал пуст. Сгенерируйте сигнал для заполнения.
+                      Dziennik pusty. Wygeneruj sygnał, aby go wypełnić.
                     </td>
                   </tr>
                 )}
@@ -393,8 +393,8 @@ export default function DashboardPage() {
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">{error}</div>}
 
         <div className="flex items-center gap-3 text-xs text-neutral-500">
-          <span>Статус: {status}</span>
-          <span>Заявка: {orderStatus}</span>
+          <span>Status: {status}</span>
+          <span>Zlecenie: {orderStatus}</span>
           <span>API base: {process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'}</span>
         </div>
       </div>

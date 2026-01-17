@@ -166,10 +166,10 @@ export default function Home() {
         <nav className="flex items-center gap-3">
           {[
             { href: '/', label: 'Dashboard' },
-            { href: '/news', label: 'Новости' },
-            { href: '/signals', label: 'Журнал' },
-            { href: '/stats', label: 'Статистика' },
-            { href: '/settings', label: 'Настройки' },
+            { href: '/news', label: 'Wiadomości' },
+            { href: '/signals', label: 'Dziennik' },
+            { href: '/stats', label: 'Statystyka' },
+            { href: '/settings', label: 'Ustawienia' },
           ].map((item) => {
             const active = pathname === item.href
             return (
@@ -192,10 +192,10 @@ export default function Home() {
           <div className="absolute -left-10 top-6 h-14 w-3 rounded-full bg-neutral-900/70 blur-[12px]" aria-hidden />
           <p className="text-lg font-semibold text-neutral-700">Trader CRM</p>
           <h1 className="mt-2 text-4xl font-black leading-tight tracking-tight text-neutral-900 sm:text-5xl">
-            Open-Source CRM для трейдинга
+            Open-Source CRM dla tradingu
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-neutral-600">
-            LIVE режим (practice) с OANDA. Управляйте сигналами и отправляйте ордера напрямую из CRM.
+            LIVE tryb (practice) z OANDA. Zarządzaj sygnałami i wysyłaj zlecenia bezpośrednio z CRM.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-700">
             <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold">EUR_USD/M15</span>
@@ -216,7 +216,7 @@ export default function Home() {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Last signal</p>
                   <p className="text-xl font-bold text-neutral-900">{lastSignal?.action ?? '—'}</p>
-                  <p className="text-sm text-neutral-600">{lastSignal?.ts ?? 'Нет сигналов'}</p>
+                  <p className="text-sm text-neutral-600">{lastSignal?.ts ?? 'Brak sygnałów'}</p>
                 </div>
                 <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
                   {status === 'loading' ? 'Loading…' : 'Ready'}
@@ -228,7 +228,7 @@ export default function Home() {
                   className="inline-flex items-center justify-center rounded-full border-2 border-neutral-900 bg-neutral-900 px-5 py-2 text-sm font-semibold text-white shadow-[0_6px_0_#0f172a] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_9px_0_#0f172a] active:translate-y-0 active:shadow-[0_3px_0_#0f172a] disabled:opacity-60"
                   disabled={status === 'loading'}
                 >
-                  Получить сигнал
+                  Pobierz sygnał
                 </button>
                 <button
                   onClick={() => handleOrder('long')}
@@ -261,7 +261,7 @@ export default function Home() {
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Аккаунт</h3>
+                <h3 className="text-lg font-semibold">Konto</h3>
                 <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
                   {account?.demo ? 'DEMO' : 'LIVE'}
                 </span>
@@ -276,7 +276,7 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-neutral-600">Нет данных аккаунта.</p>
+                <p className="text-sm text-neutral-600">Brak danych konta.</p>
               )}
               <button
                 onClick={() => {
@@ -285,7 +285,7 @@ export default function Home() {
                 }}
                 className="self-start rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-700 hover:border-neutral-300"
               >
-                Обновить данные
+                Odśwież dane
               </button>
             </div>
           </div>

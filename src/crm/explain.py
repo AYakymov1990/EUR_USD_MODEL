@@ -1,4 +1,4 @@
-"""Lightweight explanations for signals (RU)."""
+"""Lightweight explanations for signals (PL)."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ import numpy as np
 
 
 def build_explanation(features: Dict[str, float], y_hat: float) -> str:
-    """Return short Russian explanation using key features."""
+    """Return short Polish explanation using key features."""
     parts: List[str] = []
     trend = features.get("ema_20_50_diff", 0.0)
     adx = features.get("adx_14", 0.0)
     h1 = features.get("h1_trend_flag", 0)
-    parts.append(f"Прогноз модели: {y_hat:.6f}")
+    parts.append(f"Prognoza modelu: {y_hat:.6f}")
     if trend > 0:
-        parts.append("EMA20 выше EMA50 (локальный бычий уклон)")
+        parts.append("EMA20 powyżej EMA50 (lokalne bycze nachylenie)")
     else:
-        parts.append("EMA20 ниже EMA50 (локальный медвежий уклон)")
+        parts.append("EMA20 poniżej EMA50 (lokalne niedźwiedzie nachylenie)")
     parts.append(f"ADX={adx:.1f}")
-    parts.append(f"H1 тренд-флаг={h1}")
+    parts.append(f"H1 trend-flag={h1}")
     return "; ".join(parts)
 
 

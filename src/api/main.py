@@ -93,14 +93,14 @@ class CRMService:
         direction = signal.get("action")
         if direction not in {"long", "short"}:
             return
-        subject = f"Trader CRM: сигнал {direction.upper()} @ {ts}"
+        subject = f"Trader CRM: sygnał {direction.upper()} @ {ts}"
         body = (
-            f"Время: {ts}\n"
-            f"Действие: {direction}\n"
-            f"Прогноз y_hat: {y_hat}\n"
-            f"Причина: {signal.get('reason','')}\n"
-            f"Режим: {signal.get('regime','')}\n"
-            f"Цена: {meta.get('close')}"
+            f"Czas: {ts}\n"
+            f"Działanie: {direction}\n"
+            f"Prognoza y_hat: {y_hat}\n"
+            f"Powód: {signal.get('reason','')}\n"
+            f"Tryb: {signal.get('regime','')}\n"
+            f"Cena: {meta.get('close')}"
         )
         send_email(self.cfg, subject, body)
 
@@ -111,7 +111,7 @@ class CRMService:
         if cfg.demo_mode:
             row = self._next_demo_row()
             if row is None:
-                raise HTTPException(status_code=400, detail="Нет демо-данных")
+                raise HTTPException(status_code=400, detail="Brak danych demo")
             feature_df = build_feature_row(row)
             y_hat = 0.0
             if self.artifacts_ok:
@@ -137,7 +137,7 @@ class CRMService:
 
         df_m15, df_h1 = get_latest_live_window(cfg)
         if df_m15 is None or df_h1 is None or df_m15.empty or df_h1.empty:
-            raise HTTPException(status_code=502, detail="Не удалось получить свечи OANDA")
+            raise HTTPException(status_code=502, detail="Nie udało się pobrać świec OANDA")
         feature_df, last_row, meta = build_live_feature_row(df_m15, df_h1)
         y_hat = 0.0
         if self.artifacts_ok:

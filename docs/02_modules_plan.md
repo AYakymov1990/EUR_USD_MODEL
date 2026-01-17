@@ -1,23 +1,23 @@
-# План по модулям (вехи)
+# Plan modułów (kamienie milowe)
 
-## Этап 1. CRM-скелет
-- [x] Конфиг/окружение: `src/crm/config.py` (practice по умолчанию, загрузка .env).
-- [x] Адаптер данных: `data_feed` (реплей из тестового среза) + режим live-заготовка.
-- [x] Инференс/объяснение: загрузка модели/скейлера, краткий текст объяснения.
-- [x] Сигналы: пороги/режимы из `selected_config.json`, режим demo/live.
-- [x] SQLite-хранилище: таблицы signals/actions/orders/fills/metrics.
-- [x] OANDA-исполнитель (заглушка + вызовы под practice).
-- [x] Планировщик: простой цикл/apscheduler.
+## Etap 1. Szkielet CRM
+- [x] Config/środowisko: `src/crm/config.py` (domyślnie practice, ładowanie .env).
+- [x] Adapter danych: `data_feed` (replay z testowego wycinka) + szkic trybu live.
+- [x] Inferencja/wyjaśnienie: ładowanie modelu/scalera, krótki tekst wyjaśnienia.
+- [x] Sygnały: progi/reżimy z `selected_config.json`, tryb demo/live.
+- [x] Magazyn SQLite: tabele signals/actions/orders/fills/metrics.
+- [x] Egzekutor OANDA (zastępstwo + wywołania na practice).
+- [x] Planer: prosty loop/apscheduler.
 
-## Этап 2. UI и демо
-- [ ] Streamlit `app.py`: панели сигналов/объяснения, кнопки LONG/SHORT, счёт/метрики, переключатель demo/live.
-- [ ] Запуск демо: реплей свечей → сигнал → запись в SQLite → отображение.
+## Etap 2. UI i demo
+- [ ] Streamlit `app.py`: panele sygnałów/wyjaśnień, przyciski LONG/SHORT, konto/metryki, przełącznik demo/live.
+- [ ] Uruchomienie demo: replay świec → sygnał → zapis w SQLite → wyświetlenie.
 
-## Этап 3. Live (опционально)
-- [ ] Подключить реальные ключи из .env, протестировать вызовы баланса/ордера.
-- [ ] Обработка ошибок/ретраев OANDA, таймауты.
+## Etap 3. Live (opcjonalnie)
+- [ ] Podłączyć realne klucze z .env, przetestować wywołania balansu/zleceń.
+- [ ] Obsługa błędów/retry OANDA, time-outy.
 
-## Этап 4. Улучшения (после демо)
-- [ ] Уведомления (email/telegram) из сигналов.
-- [ ] Расширенное объяснение (SHAP или топ-N признаков).
-- [ ] Больше режимов управления риском (позиционирование, стоп/тейк).
+## Etap 4. Ulepszenia (po demo)
+- [ ] Powiadomienia (email/telegram) z sygnałów.
+- [ ] Rozszerzone wyjaśnienie (SHAP lub top-N cech).
+- [ ] Więcej trybów zarządzania ryzykiem (pozycjonowanie, stop/take).

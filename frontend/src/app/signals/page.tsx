@@ -25,7 +25,7 @@ async function fetchSignals(limit = 100): Promise<SignalItem[]> {
 }
 
 const filters = [
-  { value: 'all', label: 'Все' },
+  { value: 'all', label: 'Wszystkie' },
   { value: 'long', label: 'Long' },
   { value: 'short', label: 'Short' },
   { value: 'none', label: 'None' },
@@ -67,10 +67,10 @@ export default function SignalsPage() {
         <nav className="flex items-center gap-3">
           {[
             { href: '/', label: 'Dashboard' },
-            { href: '/news', label: 'Новости' },
-            { href: '/signals', label: 'Журнал' },
-            { href: '/stats', label: 'Статистика' },
-            { href: '/settings', label: 'Настройки' },
+            { href: '/news', label: 'Wiadomości' },
+            { href: '/signals', label: 'Dziennik' },
+            { href: '/stats', label: 'Statystyka' },
+            { href: '/settings', label: 'Ustawienia' },
           ].map((item) => {
             const active = pathname === item.href
             return (
@@ -91,9 +91,9 @@ export default function SignalsPage() {
 
         <section className="rounded-[28px] border-[2.5px] border-neutral-900 bg-white px-7 py-8 shadow-[0_22px_70px_rgba(0,0,0,0.12)]">
           <p className="text-sm font-semibold text-neutral-700">Trader CRM</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Журнал сигналов</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Dziennik sygnałów</h1>
           <p className="mt-3 max-w-2xl text-lg text-neutral-600">
-            Последние сигналы модели. Можно фильтровать по действию и обновлять данные.
+            Ostatnie sygnały modelu. Możesz filtrować po działaniu i odświeżać dane.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-neutral-700">
             {filters.map((f) => (
@@ -114,7 +114,7 @@ export default function SignalsPage() {
               className="rounded-full border-2 border-neutral-900 bg-neutral-900 px-4 py-2 font-semibold text-white shadow-[0_6px_0_#0f172a] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_9px_0_#0f172a] active:translate-y-0 active:shadow-[0_3px_0_#0f172a] disabled:opacity-60"
               disabled={loading}
             >
-              {loading ? 'Загрузка…' : 'Обновить'}
+              {loading ? 'Ładowanie…' : 'Odśwież'}
             </button>
           </div>
         </section>
@@ -168,14 +168,14 @@ export default function SignalsPage() {
                 {!loading && filteredSignals.length === 0 && (
                   <tr>
                     <td className="px-4 py-3 text-neutral-600" colSpan={5}>
-                      Нет сигналов под выбранный фильтр.
+                      Brak sygnałów dla wybranego filtra.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
                     <td className="px-4 py-3 text-neutral-600" colSpan={5}>
-                      Загрузка…
+                      Ładowanie…
                     </td>
                   </tr>
                 )}

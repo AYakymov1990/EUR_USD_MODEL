@@ -1,70 +1,70 @@
-Command – Build New Frontend for Trader CRM
-Overview
+Command – Zbuduj nowy frontend dla Trader CRM
+Przegląd
 
-We need to create a standalone web frontend for our Trader CRM (EUR/USD model) that exactly matches the design of a given reference site (link provided separately). This will replace the current Streamlit UI with a more conventional web app (e.g. React/Next.js or similar). The goal is a pixel-perfect copy of the original design: all layouts, typography, colors, and components must match exactly. We will assemble a team (front-end developers, a UI/UX designer, a QA/tester, etc.) to execute this. The development will use MCP Playwright for automated screenshot comparisons, iteratively fixing discrepancies until the new frontend is visually identical to the original. The frontend code should live in a new directory (e.g. /frontend), separate from the Python backend, to avoid conflicts and aid navigation
+Musimy stworzyć samodzielny frontend webowy dla naszego Trader CRM (model EUR/USD), który dokładnie odpowiada projektowi wskazanej strony referencyjnej (link dostarczany osobno). Zastępujemy obecny interfejs Streamlit klasyczną aplikacją webową (np. React/Next.js). Celem jest kopia piksel w piksel: układ, typografia, kolory i komponenty muszą się zgadzać. Zbieramy zespół (frontend developerzy, projektant UI/UX, QA/tester itp.) do realizacji. Użyjemy MCP Playwright do automatycznych porównań zrzutów ekranu, iteracyjnie korygując różnice, aż nowy frontend będzie wizualnie identyczny z oryginałem. Kod frontendu powinien żyć w nowym katalogu (np. `/frontend`), oddzielonym od backendu w Pythonie, aby uniknąć konfliktów i ułatwić nawigację
 nairihar.medium.com
 netguru.com
-. We will also follow modern best practices: use a component-based framework (like React with Tailwind CSS), maintain clean code (SOLID principles, meaningful names)
+. Stosujemy nowoczesne praktyki: framework komponentowy (React z Tailwind CSS), czysty kod (SOLID, sensowne nazwy)
 medium.com
-, and enforce coding standards with tools like ESLint/Prettier
+, oraz standardy kodu wymuszane przez ESLint/Prettier
 bacancytechnology.com
 .
 
-Steps
+Kroki
 
-1.Assemble Implementation Team. Identify and assign roles needed for the frontend project (e.g., one or more front-end developers skilled in React/Next.js or Vue, a UI/UX designer for layouts, a QA/test engineer for visual testing, and a DevOps/CI specialist). Define responsibilities and communication channels. A cross-functional team ensures design, development, and testing are well-coordinated.
+1. Zbierz zespół wdrożeniowy. Zidentyfikuj i przypisz role potrzebne do projektu frontendu (np. jeden lub kilku developerów React/Next.js lub Vue, projektant UI/UX do layoutów, QA/tester do testów wizualnych, specjalista DevOps/CI). Zdefiniuj odpowiedzialności i kanały komunikacji. Zespół cross‑funkcyjny zapewnia spójność designu, developmentu i testów.
 
-2.Select Frontend Technology. Choose a web framework that fits our needs. Popular options include React (often with Next.js for full-featured apps), Vue, or Angular. For this project, React (with TypeScript) is recommended due to its component-based architecture and strong ecosystem. We will use a utility-first CSS framework like Tailwind CSS or a CSS module approach to achieve precise styling. (React’s emphasis on reusable components and hooks aligns well with our project scope
+2. Wybierz technologię frontendu. Dobierz framework webowy do naszych potrzeb. Popularne opcje to React (często z Next.js), Vue lub Angular. Dla tego projektu polecany jest React (z TypeScript) ze względu na architekturę komponentową i ekosystem. Użyjemy frameworka CSS utility-first jak Tailwind CSS lub podejścia z modułami CSS, by osiągnąć precyzyjne style. (Nacisk Reacta na wielokrotne użycie komponentów i hooki dobrze pasuje do zakresu
 medium.com
-.) Enforce strict coding standards: enable TypeScript strict mode and use linting (ESLint) and formatting (Prettier) for consistency
+.) Wymuszaj rygorystyczne standardy: TypeScript w trybie strict oraz lintowanie (ESLint) i formatowanie (Prettier) dla spójności
 bacancytechnology.com
 .
 
-3.Set Up Project Structure. Create a new top-level folder (e.g. frontend/ or ui/) in the repository for the web app
+3. Ustaw strukturę projektu. Utwórz w repozytorium nowy katalog najwyższego poziomu (np. `frontend/` lub `ui/`) dla aplikacji webowej
 nairihar.medium.com
-. Initialize the project (e.g. using create-react-app, Next.js starter, Vite, etc.) inside this folder. Organize it according to best practices: include directories like components/, pages/ or views/, hooks/, assets/, and services/
+. Zainicjalizuj projekt (np. create-react-app, starter Next.js, Vite) wewnątrz tego folderu. Zorganizuj go wg dobrych praktyk: katalogi components/, pages/ lub views/, hooks/, assets/, services/
 netguru.com
-. This clear separation ensures backend and frontend code don’t interfere. Configure absolute imports or path aliases (via jsconfig.json or tsconfig.json) to simplify imports across components
+. Taki podział izoluje backend i frontend. Skonfiguruj importy absolutne lub aliasy ścieżek (przez jsconfig.json lub tsconfig.json), aby uprościć importy w komponentach
 netguru.com
-. Commit the initial structure to version control.
+. Zacommituj początkową strukturę do repozytorium.
 
-4.Capture Reference Design. Open the provided reference website link in a browser. Use the MCP Playwright tool to take a full-page screenshot (e.g. mcp playwright or an equivalent script). Save this as original.png. This image will serve as our baseline. Inspect the page structure – identify all major sections (headers, nav bars, content blocks, footers, etc.). Document fonts, colors, and spacing if needed. This visual reference guides our implementation.
+4. Uchwyć projekt referencyjny. Otwórz dostarczony link w przeglądarce. Użyj narzędzia MCP Playwright do zrobienia pełnego zrzutu ekranu (np. mcp playwright lub równoważny skrypt). Zapisz go jako `original.png`. To nasza baza. Obejrzyj strukturę strony — zidentyfikuj sekcje (nagłówki, nawigacja, bloki treści, stopki). Zanotuj fonty, kolory i odstępy w razie potrzeby. Ta referencja prowadzi implementację.
 
-5.Build Initial Page Layout. In the new frontend project, create the first page (e.g. pages/index.tsx for Next.js or App.js for CRA). Reproduce the structure of the reference site one section at a time: create React components for each major block (header, hero/banner, features, charts, footer, etc.). Use placeholder content or copy text from the reference. At this stage, focus on the layout and hierarchy – use container divs or Tailwind utility classes to position elements similarly (Flexbox/Grid for layout, consistent margins/padding). Ensure the React component tree mirrors the structure of the reference. Keep components small and reusable
+5. Zbuduj wstępny layout strony. W nowym projekcie frontendu utwórz pierwszą stronę (np. `pages/index.tsx` dla Next.js lub App.js dla CRA). Odwzoruj strukturę referencji sekcja po sekcji: twórz komponenty React dla głównych bloków (header, hero/baner, features, wykresy, footer itd.). Użyj placeholderów lub skopiuj tekst z referencji. Na tym etapie skup się na układzie i hierarchii — stosuj kontenery lub klasy Tailwind do ułożenia elementów (Flexbox/Grid, spójne marginesy/padding). Upewnij się, że drzewo komponentów odzwierciedla strukturę referencji. Trzymaj komponenty małe i wielorazowe
 medium.com
- (split large components into smaller ones).
+ (duże dziel na mniejsze).
 
-6.Apply Styling. Use Tailwind CSS (or your chosen CSS method) to match the exact styles of the original: fonts, font sizes, colors, spacing, borders, etc. Tailwind’s utility classes can enforce pixel-precise spacing and colors, and it’s widely recommended for consistency
+6. Zastosuj stylowanie. Użyj Tailwind CSS (lub wybranej metody CSS), aby dopasować style oryginału: fonty, rozmiary, kolory, odstępy, ramki itp. Klasy utility Tailwind zapewniają pikselową precyzję i spójność
 medium.com
-. If the original uses specific custom fonts or assets, add them to the project (e.g. include Google Fonts or SVG images). Adjust global styles (e.g. a CSS reset or base stylesheet) to match the reference’s base typography and box model. Work section by section to refine styles.
+. Jeśli oryginał korzysta ze specyficznych fontów lub assetów, dodaj je do projektu (np. Google Fonts, SVG). Dostosuj style globalne (reset CSS lub bazowy stylesheet), aby pasowały do bazowej typografii i box modelu referencji. Pracuj sekcja po sekcji, doprecyzowując style.
 
-7.Populate Dynamic Data (Optional). If the frontend needs to display dynamic data (e.g. latest signals, account metrics, news), set up data fetching or mock data for now. We have existing code (e.g. fetch_account, fetch_recent_signals) that could eventually be exposed via an API. For the pixel-perfect copy task, static or dummy data is sufficient, but plan for integration with the Python backend later. (E.g., the news list or last signal details can initially be hard-coded to match the reference layout.)
+7. Wypełnij danymi dynamicznymi (opcjonalnie). Jeśli frontend ma pokazywać dane dynamiczne (np. ostatnie sygnały, metryki konta, newsy), skonfiguruj pobieranie danych lub mocki. Mamy istniejący kod (np. fetch_account, fetch_recent_signals), który można wystawić przez API. Do kopii piksel w piksel wystarczą statyczne/przykładowe dane, ale zaplanuj późniejszą integrację z backendem Pythona. (Np. lista newsów czy szczegóły ostatniego sygnału mogą być początkowo zahardkodowane, by pasowały do layoutu referencyjnego.)
 
-8.Initial Frontend Screenshot. Run the development server (e.g. npm run dev or npm start) and open the new page (e.g. http://localhost:3000). Use MCP Playwright to take a full-page screenshot of the new page (save as page1.png). Ensure the viewport and device emulation match the reference capture (if the original is desktop width, use that).
+8. Pierwszy zrzut frontendu. Uruchom serwer deweloperski (np. `npm run dev` lub `npm start`) i otwórz nową stronę (np. http://localhost:3000). Użyj MCP Playwright, aby zrobić pełny zrzut ekranu nowej strony (zapisz jako `page1.png`). Upewnij się, że viewport/emulacja urządzenia odpowiada ujęciu referencyjnemu (jeśli oryginał to desktop, użyj tej szerokości).
 
-9.Automated Comparison. Compare original.png vs. page1.png using the MCP Playwright comparison tool. Identify visual differences: layout shifts, font mismatches, color deviations, etc. Tools like Playwright’s expect(page).toHaveScreenshot() can highlight pixel diffs, or simply use an image diffing tool. Note all discrepancies.
+9. Automatyczne porównanie. Porównaj `original.png` z `page1.png` narzędziem MCP Playwright do porównań. Zanotuj różnice wizualne: przesunięcia układu, niezgodne fonty, kolory itd. Narzędzia jak Playwright `expect(page).toHaveScreenshot()` podświetlają różnice pikselowe; można też użyć prostego image diff. Spisz wszystkie rozbieżności.
 
-10.Fix Visual Discrepancies. Update the frontend code to correct each difference. This may involve tweaking CSS/Tailwind classes, adjusting container sizes, or fixing margins/padding. Refer back to the reference: check exact pixel measurements if needed. After fixes, rebuild and retake a screenshot of the new page.
+10. Napraw różnice wizualne. Zaktualizuj kod frontendu, by skorygować każdą różnicę. Może to wymagać korekty klas CSS/Tailwind, rozmiarów kontenerów lub marginesów/paddingu. Odnoś się do referencji: sprawdzaj dokładne wymiary pikseli, jeśli trzeba. Po poprawkach zbuduj i ponownie wykonaj zrzut nowej strony.
 
-11.Iterate Until Identical. Repeat the screenshot-compare-fix cycle. Each iteration should reduce differences. Continue until no visible differences remain between the reference and the new page (i.e., the pages are pixel-for-pixel identical). At that point, the frontend matches the design exactly.
+11. Iteruj do identyczności. Powtarzaj cykl zrzut → porównanie → poprawki. Każda iteracja powinna zmniejszać różnice. Kontynuuj, aż nie będzie widocznych rozbieżności między referencją a nową stroną (piksel w piksel). W tym momencie frontend odpowiada projektowi.
 
-12.Implement Interactivity and Responsiveness. Once static layout is perfected, add any interactive features (e.g. form inputs, buttons, hover effects). If the reference site has responsive behaviors (e.g. mobile layouts), implement responsive CSS (Tailwind’s responsive utilities). Test at different screen sizes and repeat visual comparison if needed for those breakpoints.
+12. Dodaj interakcje i responsywność. Gdy statyczny layout jest dopracowany, dodaj funkcje interaktywne (np. pola formularzy, przyciski, efekty hover). Jeśli referencja ma responsywność (np. mobile), zaimplementuj responsywne CSS (utility Tailwind). Testuj różne szerokości i powtórz porównania dla tych breakpointów.
 
-13.Quality Assurance & Best Practices. Throughout development, follow clean code practices: use clear naming, comment complex logic, and adhere to component-based patterns
+13. Zapewnienie jakości i dobre praktyki. W trakcie developmentu stosuj zasady czystego kodu: jasne nazwy, komentarze przy złożonej logice, wzorce komponentowe
 medium.com
 medium.com
-. Lint and format the code automatically (ESLint/Prettier) to ensure consistency
+. Automatycznie lintuj i formatuj kod (ESLint/Prettier) dla spójności
 bacancytechnology.com
-. Write any necessary unit or integration tests for front-end components. Conduct a code review of the frontend code with peers.
+. Dodaj potrzebne testy jednostkowe/integracyjne komponentów frontendu. Przeprowadź code review z zespołem.
 
-14.Final Verification. Confirm the frontend meets all requirements: it lives in the designated directory (e.g. /frontend), it builds without errors, and the UI matches the original in all sections. Take final screenshots (original_final.png, frontend_final.png) to document the match. Ensure deployment steps or integration with the backend are documented.
+14. Weryfikacja końcowa. Potwierdź, że frontend spełnia wymagania: żyje w wyznaczonym katalogu (np. `/frontend`), buduje się bez błędów, a UI odpowiada oryginałowi w każdej sekcji. Zrób finalne zrzuty (original_final.png, frontend_final.png) jako dowód zgodności. Upewnij się, że kroki wdrożenia lub integracji z backendem są udokumentowane.
 
-Deliverables
+Rezultaty
 
-Frontend Code: A fully implemented frontend (e.g. in /frontend) with all pages/components matching the reference site.
+Kod frontendu: w pełni zaimplementowany frontend (np. w `/frontend`) z wszystkimi stronami/komponentami odpowiadającymi stronie referencyjnej.
 
-Screenshots: original.png (reference site) and page1.png (new frontend) showing the page. Final before/after images if needed.
+Zrzuty ekranu: `original.png` (strona referencyjna) i `page1.png` (nowy frontend) pokazujące stronę. W razie potrzeby finalne obrazy przed/po.
 
-Documentation: Confirmation in README or PR description that the new page matches the reference exactly. List any decisions (chosen framework, directory structure) and mention use of MCP Playwright for visual testing.
+Dokumentacja: potwierdzenie w README lub opisie PR, że nowa strona dokładnie pasuje do referencji. Lista decyzji (wybrany framework, struktura katalogów) oraz wzmianka o użyciu MCP Playwright do testów wizualnych.
 
-Team Roles (for record): Names/roles of team members who implemented the frontend, as formed in Step 1.
+Role zespołu (dla ewidencji): imiona/role członków zespołu, którzy zbudowali frontend, zgodnie z krokiem 1.

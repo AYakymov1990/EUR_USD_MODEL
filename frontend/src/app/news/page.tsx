@@ -55,10 +55,10 @@ export default function NewsPage() {
         <nav className="flex items-center gap-3">
           {[
             { href: '/', label: 'Dashboard' },
-            { href: '/news', label: 'Новости' },
-            { href: '/signals', label: 'Журнал' },
-            { href: '/stats', label: 'Статистика' },
-            { href: '/settings', label: 'Настройки' },
+            { href: '/news', label: 'Wiadomości' },
+            { href: '/signals', label: 'Dziennik' },
+            { href: '/stats', label: 'Statystyka' },
+            { href: '/settings', label: 'Ustawienia' },
           ].map((item) => {
             const active = pathname === item.href
             return (
@@ -79,18 +79,18 @@ export default function NewsPage() {
 
         <section className="rounded-[28px] border-[2.5px] border-neutral-900 bg-white px-7 py-8 shadow-[0_22px_70px_rgba(0,0,0,0.12)]">
           <p className="text-sm font-semibold text-neutral-700">Trader CRM</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Новости EUR/USD</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Wiadomości EUR/USD</h1>
           <p className="mt-3 max-w-2xl text-lg text-neutral-600">
-            Лента последних новостей по рынку. Источник: NewsAPI через backend ({API_BASE}).
+            Strumień ostatnich wiadomości rynkowych. Źródło: NewsAPI przez backend ({API_BASE}).
           </p>
           <div className="mt-4 flex items-center gap-3 text-sm text-neutral-700">
-            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold">Актуально</span>
+            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold">Aktualnie</span>
             <button
               onClick={load}
               className="rounded-full border-2 border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_0_#0f172a] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_9px_0_#0f172a] active:translate-y-0 active:shadow-[0_3px_0_#0f172a] disabled:opacity-60"
               disabled={loading}
             >
-              {loading ? 'Загрузка…' : 'Обновить'}
+              {loading ? 'Ładowanie…' : 'Odśwież'}
             </button>
           </div>
         </section>
@@ -104,7 +104,7 @@ export default function NewsPage() {
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {!loading && articles.length === 0 && (
             <div className="col-span-full rounded-2xl border border-neutral-200 bg-white/80 p-5 text-neutral-700 shadow-sm">
-              Нет новостей. Проверьте NEWS_API_KEY и доступ к API.
+              Brak newsów. Sprawdź NEWS_API_KEY i dostęp do API.
             </div>
           )}
           {articles.map((art, idx) => (
@@ -123,10 +123,10 @@ export default function NewsPage() {
               )}
               <div className="flex-1 space-y-2">
                 <p className="text-xs uppercase tracking-wide text-neutral-500">
-                  {art.source?.name || 'Источник'} · {art.publishedAt?.slice(0, 10) || ''}
+                  {art.source?.name || 'Źródło'} · {art.publishedAt?.slice(0, 10) || ''}
                 </p>
-                <h2 className="text-lg font-semibold text-neutral-900">{art.title || 'Без заголовка'}</h2>
-                <p className="text-sm text-neutral-700 line-clamp-3">{art.description || 'Без описания'}</p>
+                <h2 className="text-lg font-semibold text-neutral-900">{art.title || 'Bez tytułu'}</h2>
+                <p className="text-sm text-neutral-700 line-clamp-3">{art.description || 'Bez opisu'}</p>
               </div>
               {art.url && (
                 <a
@@ -135,7 +135,7 @@ export default function NewsPage() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 underline-offset-4 hover:underline"
                 >
-                  Открыть источник →
+                  Otwórz źródło →
                 </a>
               )}
             </article>

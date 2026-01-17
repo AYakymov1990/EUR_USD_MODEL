@@ -109,10 +109,10 @@ export default function StatsPage() {
         <nav className="flex items-center gap-3">
           {[
             { href: '/', label: 'Dashboard' },
-            { href: '/news', label: 'Новости' },
-            { href: '/signals', label: 'Журнал' },
-            { href: '/stats', label: 'Статистика' },
-            { href: '/settings', label: 'Настройки' },
+            { href: '/news', label: 'Wiadomości' },
+            { href: '/signals', label: 'Dziennik' },
+            { href: '/stats', label: 'Statystyka' },
+            { href: '/settings', label: 'Ustawienia' },
           ].map((item) => {
             const active = pathname === item.href
             return (
@@ -133,9 +133,9 @@ export default function StatsPage() {
 
         <section className="rounded-[28px] border-[2.5px] border-neutral-900 bg-white px-7 py-8 shadow-[0_22px_70px_rgba(0,0,0,0.12)]">
           <p className="text-sm font-semibold text-neutral-700">Trader CRM</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Статистика</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Statystyka</h1>
           <p className="mt-3 max-w-3xl text-lg text-neutral-600">
-            Метрики по сигналам и ордерам. P&L и win rate будут точными после интеграции с реальными сделками OANDA.
+            Metryki po sygnałach i zleceniach. P&L i win rate będą dokładne po integracji z realnymi transakcjami OANDA.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-neutral-700">
             <button
@@ -143,10 +143,10 @@ export default function StatsPage() {
               className="rounded-full border-2 border-neutral-900 bg-neutral-900 px-4 py-2 font-semibold text-white shadow-[0_6px_0_#0f172a] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_9px_0_#0f172a] active:translate-y-0 active:shadow-[0_3px_0_#0f172a] disabled:opacity-60"
               disabled={loading}
             >
-              {loading ? 'Загрузка…' : 'Обновить'}
+              {loading ? 'Ładowanie…' : 'Odśwież'}
             </button>
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
-              Источник: {API_BASE.replace(/^https?:\/\//, '')}
+              Źródło: {API_BASE.replace(/^https?:\/\//, '')}
             </span>
           </div>
         </section>
@@ -156,7 +156,7 @@ export default function StatsPage() {
         )}
 
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Всего ордеров" value={orderStats.total.toString()} />
+          <StatCard title="Łącznie zleceń" value={orderStats.total.toString()} />
           <StatCard title="Long" value={orderStats.longs.toString()} accent="text-emerald-600" />
           <StatCard title="Short" value={orderStats.shorts.toString()} accent="text-rose-600" />
           <StatCard title="Sent rate" value={formatPct(orderStats.sentRate)} />
@@ -165,8 +165,8 @@ export default function StatsPage() {
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-3xl border border-neutral-200 bg-white/85 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
             <header className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900">Ордеры по действиям</h3>
-              <span className="text-xs text-neutral-500">Последние {orders.length}</span>
+              <h3 className="text-lg font-semibold text-neutral-900">Zlecenia wg działania</h3>
+              <span className="text-xs text-neutral-500">Ostatnie {orders.length}</span>
             </header>
             <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
               {[
@@ -184,7 +184,7 @@ export default function StatsPage() {
               ))}
             </div>
             <div className="mt-6 rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-neutral-500">Полосы распределения</p>
+              <p className="text-xs uppercase tracking-wide text-neutral-500">Rozkład pasów</p>
               <div className="mt-3 flex gap-2">
                 {[
                   { value: orderStats.longs, color: 'bg-emerald-500' },
@@ -205,11 +205,11 @@ export default function StatsPage() {
 
           <div className="rounded-3xl border border-neutral-200 bg-white/85 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
             <header className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900">Ордеры по дням</h3>
-              <span className="text-xs text-neutral-500">До {orderStats.daily.length} дней</span>
+              <h3 className="text-lg font-semibold text-neutral-900">Zlecenia wg dni</h3>
+              <span className="text-xs text-neutral-500">Do {orderStats.daily.length} dni</span>
             </header>
             <div className="mt-4 space-y-3">
-              {orderStats.daily.length === 0 && <p className="text-sm text-neutral-600">Нет данных по датам.</p>}
+              {orderStats.daily.length === 0 && <p className="text-sm text-neutral-600">Brak danych po datach.</p>}
               {orderStats.daily.map(([date, count]) => (
                 <div key={date} className="flex items-center gap-3">
                   <div className="w-20 text-sm font-semibold text-neutral-800">{date}</div>
@@ -228,11 +228,11 @@ export default function StatsPage() {
 
         <section className="rounded-3xl border border-neutral-200 bg-white/85 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
           <header className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-neutral-900">Сигналы по дням</h3>
-            <span className="text-xs text-neutral-500">До {signalDaily.length} дней</span>
+            <h3 className="text-lg font-semibold text-neutral-900">Sygnały wg dni</h3>
+            <span className="text-xs text-neutral-500">Do {signalDaily.length} dni</span>
           </header>
           <div className="mt-4 space-y-3">
-            {signalDaily.length === 0 && <p className="text-sm text-neutral-600">Нет данных по датам.</p>}
+            {signalDaily.length === 0 && <p className="text-sm text-neutral-600">Brak danych po datach.</p>}
             {signalDaily.map(([date, count]) => (
               <div key={date} className="flex items-center gap-3">
                 <div className="w-20 text-sm font-semibold text-neutral-800">{date}</div>

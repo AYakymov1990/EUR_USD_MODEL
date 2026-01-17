@@ -1,19 +1,19 @@
-This Next.js (13.5, App Router) + Tailwind app hosts the new Trader CRM landing page that mirrors the twenty.com hero.
+Aplikacja Next.js (13.5, App Router) + Tailwind hostuje nową stronę lądowania Trader CRM inspirowaną sekcją hero twenty.com.
 
-## Run locally
+## Uruchom lokalnie
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open http://localhost:3000 to view the page. Edit `src/app/page.tsx` for layout/content updates and `src/app/globals.css` for global styling.
+Otwórz http://localhost:3000, aby zobaczyć stronę. Edytuj `src/app/page.tsx` dla zmian layoutu/treści oraz `src/app/globals.css` dla stylów globalnych.
 
-### Dashboard (API integration)
-- Backend API: `uvicorn src.api.main:app --reload --port 8000` (from repo root, venv).
-- Frontend: visit http://localhost:3000/dashboard to view account JSON, generate signals, and see the log using the FastAPI endpoints.
-- Configure API base via `NEXT_PUBLIC_API_BASE` env var (default `http://localhost:8000`).
+### Dashboard (integracja z API)
+- Backend API: `uvicorn src.api.main:app --reload --port 8000` (z katalogu głównego repo, w venv).
+- Frontend: odwiedź http://localhost:3000/dashboard, aby zobaczyć JSON konta, wygenerować sygnały i obejrzeć log korzystając z endpointów FastAPI.
+- Skonfiguruj bazę API przez zmienną `NEXT_PUBLIC_API_BASE` (domyślnie `http://localhost:8000`).
 
-## Visual parity workflow
-- Capture the reference (twenty.com) hero screenshot (e.g., `original.png` via MCP Playwright).
-- Capture the local build (`npm run dev`) to `page1.png` with the same viewport.
-- Compare and iterate (see `docs/05_frontend_doc.md` for the full checklist).
+## Workflow porównania wizualnego
+- Zrób zrzut referencyjnej sekcji hero (twenty.com), np. `original.png` via MCP Playwright.
+- Zrób zrzut lokalnego buildu (`npm run dev`) do `page1.png` z tym samym viewportem.
+- Porównuj i iteruj (pełna checklista w `docs/05_frontend_doc.md`).

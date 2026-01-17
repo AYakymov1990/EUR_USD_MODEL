@@ -31,10 +31,10 @@ export default function SettingsPage() {
         <nav className="flex items-center gap-3">
           {[
             { href: '/', label: 'Dashboard' },
-            { href: '/news', label: 'Новости' },
-            { href: '/signals', label: 'Журнал' },
-            { href: '/stats', label: 'Статистика' },
-            { href: '/settings', label: 'Настройки' },
+            { href: '/news', label: 'Wiadomości' },
+            { href: '/signals', label: 'Dziennik' },
+            { href: '/stats', label: 'Statystyka' },
+            { href: '/settings', label: 'Ustawienia' },
           ].map((item) => {
             const active = pathname === item.href
             return (
@@ -55,22 +55,22 @@ export default function SettingsPage() {
 
         <section className="rounded-[28px] border-[2.5px] border-neutral-900 bg-white px-7 py-8 shadow-[0_22px_70px_rgba(0,0,0,0.12)]">
           <p className="text-sm font-semibold text-neutral-700">Trader CRM</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Настройки</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">Ustawienia</h1>
           <p className="mt-3 max-w-3xl text-lg text-neutral-600">
-            Управление авто-получением сигналов. Режим сохраняется в браузере и подхватывается на dashboard.
+            Zarządzanie auto-pobraniem sygnałów. Tryb zapisuje się w przeglądarce i jest używany na dashboardzie.
           </p>
         </section>
 
         <section className="rounded-3xl border border-neutral-200 bg-white/90 p-6 shadow-[0_18px_55px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-neutral-700">Авто-получение сигналов</p>
+              <p className="text-sm font-semibold text-neutral-700">Auto-pobieranie sygnałów</p>
               <p className="text-sm text-neutral-600">
-                При включении dashboard каждые 60 секунд запрашивает новый сигнал (если не идёт загрузка).
+                Po włączeniu dashboard co 60 sekund pobiera nowy sygnał (o ile nie trwa ładowanie).
               </p>
             </div>
             <label className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-neutral-800">{autoMode ? 'Включено' : 'Выключено'}</span>
+              <span className="text-sm font-semibold text-neutral-800">{autoMode ? 'Włączone' : 'Wyłączone'}</span>
               <button
                 onClick={() => toggleAuto(!autoMode)}
                 className={`relative h-9 w-16 rounded-full border-2 transition-colors duration-150 ${
